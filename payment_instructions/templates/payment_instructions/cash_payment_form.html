@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Docta Dent - Pago en efectivo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="shortcut icon" type="image/png"
+        href="https://doctadent.com.ar/wp-content/uploads/2021/04/ico-Docta-Dent-150x150.png">
+
+</head>
+
+<style>
+    input:-webkit-autofill {
+        box-shadow: 0 0 0 1000px #263129 inset !important;
+        -webkit-text-fill-color: #EEF3ED !important;
+    }
+
+    body {
+        background-color: #18201C;
+        color: #EEF3ED;
+    }
+
+    .bg-dd-page { background-color: #18201C; }
+    .bg-dd-surface { background-color: #202A24; }
+    .bg-dd-elevated { background-color: #2B372F; }
+    .bg-dd-inset { background-color: #263129; }
+    .bg-dd-brand { background-color: #A4D468; }
+    .bg-dd-error-bg { background-color: #3A2426; }
+    .bg-dd-success-bg { background-color: #243426; }
+    .text-dd-primary { color: #EEF3ED; }
+    .text-dd-secondary { color: #C2CEC4; }
+    .text-dd-muted { color: #A6B3A9; }
+    .text-dd-brand { color: #A4D468; }
+    .text-dd-page { color: #18201C; }
+    .text-dd-error { color: #F2A6A6; }
+    .text-dd-success { color: #B8E3B2; }
+    .border-dd-border { border-color: #3B4A40; }
+    .border-dd-brand { border-color: #A4D468; }
+    .border-dd-error { border-color: #7C3A3A; }
+    .border-dd-success { border-color: #4F704D; }
+    .hover\:bg-dd-elevated:hover { background-color: #334238; }
+    .hover\:bg-dd-brand-active:hover { background-color: #78A842; }
+    .hover\:border-dd-brand:hover { border-color: #A4D468; }
+    .hover\:text-dd-brand:hover { color: #A4D468; }
+    .hover\:text-dd-secondary:hover { color: #C2CEC4; }
+    .hover\:text-dd-error:hover { color: #F2A6A6; }
+    .group:hover .group-hover\:text-dd-brand { color: #A4D468; }
+    .group:hover .group-hover\:text-dd-secondary { color: #C2CEC4; }
+    .focus\:border-dd-brand:focus { border-color: #A4D468; }
+    .focus\:ring-dd-brand:focus,
+    .focus\:ring-dd-brand-active:focus { --tw-ring-color: #A4D468; }
+    .disabled\:bg-dd-elevated:disabled { background-color: #2B372F; }
+    .disabled\:text-dd-muted:disabled { color: #A6B3A9; }
+
+    input,
+    textarea,
+    select {
+        color: #EEF3ED;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        color: #A6B3A9;
+    }
+
+    select option {
+        background-color: #263129;
+        color: #EEF3ED;
+    }
+
+    /* Hide arrows in Chrome, Safari, Edge */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input {
+        all: unset;
+        box-sizing: border-box;
+    }
+
+    /* Safari-friendly placeholder color to match "$" (#D1D5DB) */
+    #amount::placeholder {
+        color: rgba(209, 213, 219, 1);
+    }
+
+    #amount::-webkit-input-placeholder {
+        color: rgba(209, 213, 219, 1);
+    }
+
+    #amount:-ms-input-placeholder {
+        color: rgba(209, 213, 219, 1);
+    }
+
+    #amount::-moz-placeholder {
+        color: rgba(209, 213, 219, 1);
+        opacity: 1;
+    }
+
+    #amount:-moz-placeholder {
+        color: rgba(209, 213, 219, 1);
+    }
+
+    /* Subtle fade animations */
+    @keyframes fade-in-soft {
+        from {
+            opacity: 0;
+            transform: translateY(6px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fade-out-soft {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        to {
+            opacity: 0;
+            transform: translateY(6px);
+        }
+    }
+
+    .animate-fade-in {
+        animation: fade-in-soft 320ms ease-out both;
+    }
+
+    .animate-fade-out {
+        animation: fade-out-soft 200ms ease-in both;
+    }
+</style>
+
+
+<body class="bg-dd-page min-h-screen text-dd-primary">
+    {% include "payment_instructions/_staging_banner.html" %}
+    {% url 'payment_instructions:operator_dashboard' as dashboard_url %}
+    {% include "payment_instructions/_operator_nav.html" with title="Pagos en efectivo" back_url=dashboard_url %}
+
+    <div class="max-w-2xl mx-auto pt-4 pb-24 px-4 sm:py-6 sm:px-6">
+        <div data-animate="fade-in"
+            class="bg-dd-surface overflow-hidden shadow-lg rounded-lg opacity-0 p-4 sm:p-6 space-y-4">
+            <div>
+                <!-- Regular/Seña toggle -->
+                <div class="grid grid-cols-2 gap-2 mb-4" id="modeToggle">
+                    <button type="button" id="regularToggle"
+                        class="py-2 px-4 rounded-md border text-sm font-medium border-dd-brand text-dd-brand bg-dd-elevated transition-colors">
+                        Regular
+                    </button>
+                    <button type="button" id="depositToggle"
+                        class="py-2 px-4 rounded-md border text-sm font-medium border-dd-border text-dd-muted hover:border-dd-brand hover:text-dd-brand transition-colors">
+                        Seña
+                    </button>
+                </div>
+                <h3 class="text-lg sm:text-xl leading-6 font-medium text-dd-primary mb-3 sm:mb-6">
+                    Ingresa el monto <span class="text-dd-error" aria-hidden="true">*</span>
+                </h3>
+
+                <!-- Amount Input -->
+                <div class="space-y-4">
+                    <div>
+                        <div class="mt-1 relative rounded-md">
+                            <div class="absolute inset-y-0 left-0 pl-1 sm:pl-3 flex items-center pointer-events-none">
+                                <span class="text-dd-muted text-2xl sm:text-4xl">$</span>
+                            </div>
+                            <input type="text" id="amount" inputmode="numeric" required aria-required="true"
+                                class="block w-full pl-6 sm:pl-12 pr-12 rounded-md text-3xl sm:text-5xl" placeholder="0"
+                                autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-dd-inset p-4 rounded-lg space-y-4">
+                    <!-- Professional Selection -->
+                    <div>
+                        <h4 class="text-sm sm:text-md font-medium text-dd-primary mb-4">Profesional: <span class="text-dd-error" aria-hidden="true">*</span></h4>
+                        <div class="relative">
+                            <select id="professionalSelect" aria-required="true"
+                                class="w-full appearance-none bg-dd-inset border border-dd-border text-dd-primary text-sm rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-dd-brand focus:border-dd-brand hover:border-dd-brand">
+                                <option value="">Seleccionar profesional</option>
+                                {% for sp in professionals %}
+                                <option value="{{ sp.id }}">
+                                    {{ sp.last_name | default:sp.username }} {{sp.first_name | default:'' }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div
+                                class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-dd-muted">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Patient Name -->
+                    <div class="pt-4 border-dd-border">
+                        <h4 class="text-sm sm:text-md font-medium text-dd-primary mb-4">Nombre del paciente: <span class="text-dd-error" aria-hidden="true">*</span></h4>
+                        <input id="patientNameInput" type="text" aria-required="true" placeholder="Nombre del paciente"
+                            class="w-full appearance-none bg-dd-inset border border-solid border-dd-border text-dd-primary text-sm rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-dd-brand focus:border-dd-brand hover:border-dd-brand" />
+                    </div>
+
+                    <!-- Observaciones -->
+                    <div class="pt-4">
+                        <div class="flex items-center mb-2">
+                            <h4 class="text-xs sm:text-sm font-medium text-dd-primary">Observaciones:</h4>
+                        </div>
+                        <textarea id="observacionesInput"
+                            class="w-full rounded-md bg-dd-inset border border-dd-border p-2 text-md text-dd-primary focus:outline-none focus:ring-1 focus:ring-dd-brand focus:border-dd-brand hover:border-dd-brand placeholder:text-sm"
+                            placeholder="Información adicional"></textarea>
+                    </div>
+                </div>
+
+
+                <p class="text-xs text-dd-muted mt-4">
+                    <span class="text-dd-error" aria-hidden="true">*</span> Campos obligatorios.
+                </p>
+
+                <button type="button" id="createCashPaymentBtn"
+                    class="mt-4 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#8CBE4F] hover:bg-dd-brand-active focus:outline-none focus:ring-2 focus:ring-dd-brand-active disabled:bg-dd-elevated disabled:text-dd-muted disabled:cursor-not-allowed">
+                    Crear pago
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Traduce el nombre de campo que manda el backend al id del input de esta pantalla.
+        window.DD_FIELD_IDS = {
+            amount: 'amount',
+            patient_name: 'patientNameInput',
+            professional_id: 'professionalSelect',
+        };
+
+        const createCashPaymentBtn = document.getElementById('createCashPaymentBtn');
+        const professionalSelect = document.getElementById('professionalSelect');
+        const observacionesInput = document.getElementById('observacionesInput');
+        const patientNameInput = document.getElementById('patientNameInput');
+        const amountInput = document.getElementById('amount');
+        const regularToggle = document.getElementById('regularToggle');
+        const depositToggle = document.getElementById('depositToggle');
+
+        let isDeposit = false;
+
+
+
+        function setPaymentType(deposit) {
+            isDeposit = deposit;
+            const activeClasses = ['border-dd-brand', 'text-dd-brand'];
+            const inactiveClasses = ['border-dd-border', 'text-dd-muted'];
+
+            regularToggle.classList.toggle('border-dd-brand', !deposit);
+            regularToggle.classList.toggle('text-dd-brand', !deposit);
+            regularToggle.classList.toggle('border-dd-border', deposit);
+            regularToggle.classList.toggle('text-dd-muted', deposit);
+
+            depositToggle.classList.toggle('border-dd-brand', deposit);
+            depositToggle.classList.toggle('text-dd-brand', deposit);
+            depositToggle.classList.toggle('border-dd-border', !deposit);
+            depositToggle.classList.toggle('text-dd-muted', !deposit);
+        }
+
+        regularToggle.addEventListener('click', function () { setPaymentType(false); });
+        depositToggle.addEventListener('click', function () { setPaymentType(true); });
+
+        // Create cash payment function
+        createCashPaymentBtn.addEventListener('click', async function () {
+            hideMessages();
+
+            const amount = amountInput.value.replace(/\./g, '');
+            const patientName = (patientNameInput ? patientNameInput.value : '').trim();
+            const professionalId = professionalSelect ? professionalSelect.value : '';
+
+            if (!validarCampos([
+                {
+                    field: 'amount',
+                    ok: !!amount && parseInt(amount) > 0,
+                    message: 'El monto es requerido.',
+                },
+                {
+                    field: 'patient_name',
+                    ok: !!patientName,
+                    message: 'El nombre del paciente es requerido.',
+                },
+                {
+                    field: 'professional_id',
+                    ok: !!professionalId,
+                    message: 'El profesional es requerido.',
+                },
+            ])) return;
+
+            createCashPaymentBtn.disabled = true;
+            createCashPaymentBtn.textContent = 'Creando...';
+
+            try {
+                const fd = new FormData();
+                fd.append('amount', parseInt(amount, 10));
+                fd.append('payment_type', isDeposit ? 'DEPOSIT' : 'REGULAR');
+                fd.append('patient_name', patientName);
+                fd.append('professional_id', professionalId);
+                fd.append('observaciones', observacionesInput.value);
+
+                const response = await fetch('{% url "payment_instructions:create_cash_payment" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                    body: fd
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    hideMessages();
+                    showSuccess(data.message);
+                    amountInput.value = '';
+                    professionalSelect.value = '';
+                    observacionesInput.value = '';
+                    if (patientNameInput) patientNameInput.value = '';
+                    setPaymentType(false);
+                } else {
+                    handleApiError(data);
+                }
+            } catch (error) {
+                showError('Error de conexión. Revisá tu conexión e intentá de nuevo.');
+            } finally {
+                createCashPaymentBtn.disabled = false;
+                createCashPaymentBtn.textContent = 'Crear pago';
+            }
+        });
+
+
+        // Page-load animations
+        document.addEventListener('DOMContentLoaded', function () {
+            const staged = document.querySelectorAll('[data-animate="fade-in"]');
+            staged.forEach((el, idx) => {
+                setTimeout(() => {
+                    el.classList.add('animate-fade-in');
+                    const onEnd = () => {
+                        el.classList.remove('animate-fade-in');
+                        el.classList.remove('opacity-0');
+                        el.removeEventListener('animationend', onEnd);
+                    };
+                    el.addEventListener('animationend', onEnd);
+                }, idx * 60);
+            });
+        });
+
+        // Money input formatter
+        (function setupMoneyFormatter() {
+            const input = document.getElementById('amount');
+            if (!input) return;
+
+            const MAX_VALUE = 100_000_000;
+
+            function getDigits(value) {
+                return (value || '').replace(/\D+/g, '');
+            }
+
+            function stripDots(value) {
+                return (value || '').replace(/\./g, '');
+            }
+
+            function formatWithDots(digits) {
+                if (!digits) return '';
+                digits = digits.replace(/^0+(\d)/, '$1');
+                return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            }
+
+            function clampToMax(digits) {
+                if (!digits) return '';
+                const normalized = digits.replace(/^0+/, '') || '0';
+                if (normalized.length < String(MAX_VALUE).length) return normalized;
+                if (normalized.length > String(MAX_VALUE).length) return String(MAX_VALUE);
+                return (parseInt(normalized, 10) > MAX_VALUE) ? String(MAX_VALUE) : normalized;
+            }
+
+            function setSelection(el, start, end) {
+                el.setSelectionRange(start, end);
+            }
+
+            function handleInput(e) {
+                const el = e.target;
+                const prev = el.value;
+                const prevRaw = stripDots(prev);
+                const prevPos = el.selectionStart || 0;
+
+                const leftPrevDigits = getDigits(prev.slice(0, prevPos)).length;
+
+                let digits = getDigits(prevRaw);
+                digits = clampToMax(digits);
+
+                if (digits === '') {
+                    el.value = '';
+                    return;
+                }
+
+                const next = formatWithDots(digits);
+                el.value = next;
+
+                let digitsSeen = 0;
+                let newCaret = 0;
+                for (let i = 0; i < next.length; i++) {
+                    if (next[i] !== '.') {
+                        digitsSeen++;
+                    }
+                    if (digitsSeen >= leftPrevDigits) {
+                        newCaret = i + 1;
+                        break;
+                    }
+                }
+                if (leftPrevDigits > digitsSeen) newCaret = next.length;
+                setSelection(el, newCaret, newCaret);
+            }
+
+            function handleKeyDown(e) {
+                const allowedControl = [
+                    'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+                    'Home', 'End', 'Tab'
+                ];
+                const isMod = e.ctrlKey || e.metaKey;
+                if (isMod) {
+                    const k = e.key.toLowerCase();
+                    if (k === 'a' || k === 'c' || k === 'x' || k === 'v' || k === 'z' || k === 'y') {
+                        return;
+                    }
+                }
+                if (allowedControl.includes(e.key)) return;
+
+                if (!/^[0-9]$/.test(e.key)) {
+                    e.preventDefault();
+                    return;
+                }
+
+                const raw = getDigits(stripDots(input.value));
+                const selectionStart = input.selectionStart || 0;
+                const selectionEnd = input.selectionEnd || 0;
+                const left = getDigits(stripDots(input.value.slice(0, selectionStart)));
+                const right = getDigits(stripDots(input.value.slice(selectionEnd)));
+                const predicted = (left + e.key + right).replace(/^0+(\d)/, '$1');
+                const clamped = clampToMax(predicted);
+                if (clamped !== predicted) {
+                    e.preventDefault();
+                }
+            }
+
+            function handlePaste(e) {
+                e.preventDefault();
+                const text = (e.clipboardData || window.clipboardData).getData('text');
+                let digits = getDigits(text);
+                digits = clampToMax(digits);
+
+                if (!digits) return;
+
+                const formatted = formatWithDots(digits);
+                input.value = formatted;
+                const caret = formatted.length;
+                setSelection(input, caret, caret);
+            }
+
+            input.addEventListener('input', handleInput);
+            input.addEventListener('keydown', handleKeyDown);
+            input.addEventListener('paste', handlePaste);
+        })();
+    </script>
+    {% include "payment_instructions/_form_errors.html" %}
+</body>
+
+</html>

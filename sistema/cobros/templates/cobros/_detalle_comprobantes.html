@@ -1,0 +1,43 @@
+{% load pesos ui %}
+  {% if cobro.comprobante or otros_comprobantes or puede_adjuntar %}
+  <section class="card2" aria-labelledby="h-comp">
+    <div class="hd"><h2 id="h-comp">Comprobantes ({{ cantidad_comprobantes }})</h2></div>
+    <div class="bd2 space-y-4">
+      {% if cobro.comprobante or otros_comprobantes %}
+      <ul class="m-0 list-none space-y-2 p-0">
+        {% if cobro.comprobante %}
+        <li class="file flex-wrap"><c-icono nombre="file-text" /><span class="min-w-0 flex-1">Comprobante 1{% if fecha_comprobante_1 %}<small class="block text-ink-3 tabular-nums">{{ fecha_comprobante_1|date:"d/m/Y H:i" }}</small>{% endif %}</span><c-boton href="{% url 'cobros:comprobante' cobro.pk %}" variante="secundario" icono="download" target="_blank" rel="noopener">Abrir comprobante</c-boton></li>
+        {% endif %}
+        {% for o in otros_comprobantes %}
+        <li class="file flex-wrap"><c-icono nombre="file-text" /><span class="min-w-0 flex-1">Comprobante {{ forloop.counter|add:1 }}<small class="block text-ink-3 tabular-nums">{{ o.fecha_alta|date:"d/m/Y H:i" }}</small></span>{% if es_admin %}<c-boton href="{% url 'cobros:comprobante_otro' o.pk %}" variante="secundario" icono="download" target="_blank" rel="noopener">Abrir comprobante {{ forloop.counter|add:1 }}</c-boton>{% endif %}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      {% if cobro.migrado and cobro.estado == "finalizado" %}
+      <c-alerta nivel="info">Cobro migrado sin comprobante.</c-alerta>
+      {% else %}
+      <c-alerta nivel="info">Todavía no hay comprobantes. El cobro pasa a Finalizado con el primero.</c-alerta>
+      {% endif %}
+      {% endif %}
+      {% if puede_adjuntar %}
+      <form method="post" action="{% url 'cobros:adjuntar' cobro.pk %}" enctype="multipart/form-data" class="space-y-3 border-t border-line pt-4">
+        {% csrf_token %}
+        <input type="hidden" name="estado_visto" value="{{ cobro.estado }}">
+        <h3 class="font-semibold">Adjuntar comprobante</h3>
+        <div data-comprobante>
+          <label class="drop" for="id_comprobante_adjunto">
+            <span class="grid size-12 place-items-center rounded-full bg-elevated text-brand-ink"><c-icono nombre="upload" clase="size-6" /></span>
+            <span class="font-medium">Tocá para elegir, sacá una foto o arrastrá el archivo</span>
+            <span class="hint">Imagen o PDF, hasta 5 MB. Sin monto.</span>
+            <input id="id_comprobante_adjunto" type="file" name="comprobante" accept="image/*,application/pdf" required>
+          </label>
+          <ul data-elegidos class="list-none p-0"></ul>
+          <p class="err-msg" role="alert" data-error hidden></p>
+        </div>
+        <div class="flex justify-end"><c-boton variante="primario" icono="check">{% if cobro.estado == "finalizado" %}Agregar comprobante{% else %}Guardar cobro{% endif %}</c-boton></div>
+      </form>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+

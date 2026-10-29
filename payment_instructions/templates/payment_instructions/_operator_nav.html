@@ -1,0 +1,103 @@
+{% comment %}
+Header del operador. Reemplaza el FAB circular (Admin/Salir vivían ahí): ahora
+cuelgan del mismo chip que muestra quién está logueado.
+
+Parámetros:
+  title       - texto de la izquierda (obligatorio).
+  back_url    - si se pasa, muestra flecha "volver" a esa URL.
+  show_brand  - si es True, agrega "/ Docta Dent" al lado del título (solo dashboard).
+
+Los labels de rol se traducen acá porque `User.ROLE_CHOICES` (models.py) está en
+inglés — cambiar eso es tocar models.py y generar migración, fuera de alcance de
+este rediseño visual.
+{% endcomment %}
+<nav class="bg-dd-surface border-b border-dd-border">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between py-4 gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+                {% if back_url %}
+                <a href="{{ back_url }}" aria-label="Volver"
+                    class="text-dd-muted hover:text-dd-brand focus:outline-none focus:ring-2 focus:ring-dd-brand rounded transition-colors shrink-0">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 12H5M11 18l-6-6 6-6" />
+                    </svg>
+                </a>
+                {% endif %}
+                <h1 class="sm:text-2xl text-xl font-semibold text-dd-primary truncate">{{ title }}</h1>
+                {% if show_brand %}
+                <span class="text-dd-border hidden sm:inline">/</span>
+                <span class="sm:text-2xl text-xl font-semibold text-dd-brand hidden sm:inline">Docta Dent</span>
+                {% endif %}
+            </div>
+
+            <div class="relative shrink-0">
+                <button type="button" id="operatorNavMenuBtn" aria-haspopup="true" aria-expanded="false"
+                    class="flex items-center gap-2 pl-1 pr-3 py-1 bg-dd-elevated border border-dd-border rounded-full hover:border-dd-brand focus:outline-none focus:ring-2 focus:ring-dd-brand transition-colors">
+                    <span
+                        class="w-8 h-8 rounded-full bg-dd-brand text-dd-page flex items-center justify-center text-xs font-bold shrink-0">
+                        {% if user.first_name or user.last_name %}{{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}{% else %}{{ user.username|slice:":2"|upper }}{% endif %}
+                    </span>
+                    <span class="hidden sm:flex flex-col items-start leading-tight">
+                        <span class="text-sm font-semibold text-dd-primary">{{ user.get_full_name|default:user.username }}</span>
+                        <span class="text-[11px] uppercase tracking-wide text-dd-muted">
+                            {% if user.role == "administrator" %}Administrador
+                            {% elif user.role == "operator" %}Operador
+                            {% elif user.role == "professional" %}Profesional
+                            {% else %}{{ user.role }}{% endif %}
+                        </span>
+                    </span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-dd-muted">
+                        <path d="M6 9l6 6 6-6" />
+                    </svg>
+                </button>
+
+                <div id="operatorNavMenu"
+                    class="hidden absolute right-0 mt-2 w-56 bg-dd-surface border border-dd-border rounded-lg shadow-xl overflow-hidden z-50">
+                    <a href="/admin/"
+                        class="flex items-center gap-2 px-4 py-3 text-sm text-dd-secondary hover:bg-dd-elevated transition-colors">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3" />
+                            <path
+                                d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009.13 19a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 14.6a1.65 1.65 0 00-1.51-1H3.4a2 2 0 010-4h.09A1.65 1.65 0 005 8.13a1.65 1.65 0 00-.33-1.82l-.06-.06A2 2 0 117.44 3.42l.06.06A1.65 1.65 0 009.32 3.8H9.4a1.65 1.65 0 001-1.51V2.4a2 2 0 014 0v.09a1.65 1.65 0 001 1.51h.09a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019 8.13v.09a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+                        </svg>
+                        Panel de administración
+                    </a>
+                    <div class="h-px bg-dd-border"></div>
+                    <a href="{% url 'payment_instructions:operator_logout' %}"
+                        class="flex items-center gap-2 px-4 py-3 text-sm text-dd-secondary hover:bg-dd-elevated transition-colors">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                            <path d="M16 17l5-5-5-5" />
+                            <path d="M21 12H9" />
+                        </svg>
+                        Cerrar sesión
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<script>
+    (function () {
+        const btn = document.getElementById('operatorNavMenuBtn');
+        const menu = document.getElementById('operatorNavMenu');
+        if (!btn || !menu) return;
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const abierto = !menu.classList.contains('hidden');
+            menu.classList.toggle('hidden');
+            btn.setAttribute('aria-expanded', String(!abierto));
+        });
+        document.addEventListener('click', function (e) {
+            if (!btn.contains(e.target) && !menu.contains(e.target)) {
+                menu.classList.add('hidden');
+                btn.setAttribute('aria-expanded', 'false');
+            }
+        });
+    })();
+</script>

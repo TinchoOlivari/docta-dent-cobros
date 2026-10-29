@@ -1,0 +1,30 @@
+{% extends "sistema/base.html" %}
+{% block title %}Cobros{% endblock %}
+{% block migas %}<li><span aria-current="page">Cobros</span></li>{% endblock %}
+{% block titulo %}Cobros{% endblock %}
+{% block subtitulo %}¿Qué querés hacer?{% endblock %}
+{% block content %}
+<div class="grid gap-4 sm:grid-cols-3">
+  <a href="{% url 'dentalink:pacientes' %}" class="card2 flex min-h-[44px] items-center gap-4 p-5 transition hover:border-brand-ink">
+    <span class="grid size-14 flex-none place-items-center rounded-full bg-brand text-on-brand"><c-icono nombre="plus" clase="size-7" /></span>
+    <span>
+      <span class="block text-lg font-semibold">Nuevo cobro</span>
+      <span class="block text-ink-2">Buscá al paciente y registrá el cobro.</span>
+    </span>
+  </a>
+  <a href="{% url 'cobros:lista' %}?estado=pendiente" class="card2 flex min-h-[44px] items-center gap-4 p-5 transition hover:border-brand-ink">
+    <span class="grid size-14 flex-none place-items-center rounded-full bg-elevated text-brand-ink text-2xl font-semibold tabular-nums">{{ pendientes }}</span>
+    <span>
+      <span class="block text-lg font-semibold">Pendientes</span>
+      <span class="block text-ink-2">Cobros que todavía no se cerraron.</span>
+    </span>
+  </a>
+  <a href="{% url 'cobros:lista' %}" class="card2 flex min-h-[44px] items-center gap-4 p-5 transition hover:border-brand-ink">
+    <span class="grid size-14 flex-none place-items-center rounded-full bg-elevated text-brand-ink"><c-icono nombre="receipt" clase="size-7" /></span>
+    <span>
+      <span class="block text-lg font-semibold">Mis cobros</span>
+      <span class="block text-ink-2">Revisá los cobros que cargaste.</span>
+    </span>
+  </a>
+</div>
+{% endblock %}

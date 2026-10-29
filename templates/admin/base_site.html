@@ -1,0 +1,10 @@
+{% extends "admin/base_site.html" %}
+
+{% block header %}
+{% if is_staging %}
+<div style="background:#b45309;color:#fff;text-align:center;padding:6px;font-weight:bold;">
+    ⚠ Ambiente de staging — no es producción
+</div>
+{% endif %}
+{{ block.super }}
+{% endblock %}

@@ -1,0 +1,127 @@
+from django.core.management.base import BaseCommand
+from django.contrib.auth import get_user_model
+from django.utils import timezone
+from django.db import transaction
+from django.core.files.base import ContentFile
+
+import random
+from datetime import datetime, timedelta
+
+from payment_instructions.models import Payment, PaymentRecipient
+
+
+User = get_user_model()
+
+
+class Command(BaseCommand):
+    help = "Create many payments at random dates between given years (default 2000-2025)."
+
+    def add_arguments(self, parser):
+        parser.add_argument("--count", type=int, default=1000, help="Number of payments to create")
+        parser.add_argument("--start-year", type=int, default=2000, help="Start year (inclusive)")
+        parser.add_argument("--end-year", type=int, default=2025, help="End year (inclusive)")
+        parser.add_argument("--min-amount", type=int, default=100, help="Minimum payment amount")
+        parser.add_argument("--max-amount", type=int, default=5000, help="Maximum payment amount")
+
+    def _ensure_seed_data(self):
+        recipients_qs = PaymentRecipient.objects.all()
+        if not recipients_qs.exists():
+            for idx in range(1, 6):
+                PaymentRecipient.objects.create(
+                    name=f"Recipient {idx}",
+                    alias=f"RECIPIENT_{idx:02d}",
+                    cbu=(str(idx) * 22)[:22],
+                    max_amount=10_000_000,
+                    min_threshold=0,
+                    priority_order=idx,
+                    is_active=True,
+                )
+            recipients_qs = PaymentRecipient.objects.all()
+
+        # Los profesionales son User con role PROFESSIONAL: no hay un modelo aparte.
+        # Este comando apuntaba a uno inexistente y reventaba con ImportError.
+        professionals_qs = User.objects.filter(role=User.PROFESSIONAL, is_active=True)
+        if not professionals_qs.exists():
+            for idx in range(1, 11):
+                User.objects.create_user(
+                    username=f"profesional_{idx}",
+                    email=f"profesional_{idx}@example.com",
+                    password="bulk_professional",
+                    role=User.PROFESSIONAL,
+                )
+            professionals_qs = User.objects.filter(role=User.PROFESSIONAL, is_active=True)
+
+        operator = (
+            User.objects.filter(is_staff=True).first()
+            or User.objects.filter(username="bulk_operator").first()
+        )
+        if operator is None:
+            operator = User.objects.create_user(
+                username="bulk_operator",
+                email="bulk_operator@example.com",
+                password="bulk_operator",
+            )
+            # Best effort to mark as staff/operator for admin visibility
+            operator.is_staff = True
+            if hasattr(User, "OPERATOR"):
+                try:
+                    operator.role = User.OPERATOR  # type: ignore[attr-defined]
+                except Exception:
+                    pass
+            operator.save()
+
+        return recipients_qs, professionals_qs, operator
+
+    def _random_datetime_between_years(self, start_year: int, end_year: int) -> datetime:
+        start_dt = datetime(start_year, 1, 1, 0, 0, 0)
+        end_dt = datetime(end_year, 12, 31, 23, 59, 59)
+        total_seconds = int((end_dt - start_dt).total_seconds())
+        rand_offset = random.randint(0, total_seconds)
+        naive = start_dt + timedelta(seconds=rand_offset)
+        return timezone.make_aware(naive, timezone.get_default_timezone())
+
+    def handle(self, *args, **options):
+        count = options["count"]
+        start_year = options["start_year"]
+        end_year = options["end_year"]
+        min_amount = options["min_amount"]
+        max_amount = options["max_amount"]
+
+        if start_year > end_year:
+            start_year, end_year = end_year, start_year
+
+        recipients, professionals, operator = self._ensure_seed_data()
+
+        self.stdout.write(
+            f"Creating {count} payments dated randomly between {start_year} and {end_year}..."
+        )
+
+        created = 0
+        with transaction.atomic():
+            for idx in range(1, count + 1):
+                recipient = recipients.order_by("?").first()
+                professional = professionals.order_by("?").first()
+                amount = random.randint(min_amount, max_amount)
+                created_at = self._random_datetime_between_years(start_year, end_year)
+
+                # Tiny PDF-like content for the proof file
+                file_content = ContentFile(
+                    b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n1 0 obj\n<<>>\nendobj\n", name="proof.pdf"
+                )
+
+                payment = Payment(
+                    amount=amount,
+                    payment_recipient=recipient,
+                    professional=professional,
+                    operator_user=operator,
+                    observaciones="Generated by create_random_payments",
+                    created_at=created_at,
+                )
+                payment.proof_of_payment_file.save(file_content.name, file_content, save=False)
+                payment.save()
+
+                created += 1
+                if created % 100 == 0:
+                    self.stdout.write(f"Created {created}/{count} payments...")
+
+        self.stdout.write(self.style.SUCCESS(f"Done. Created {created} payments."))

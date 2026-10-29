@@ -1,0 +1,5 @@
+<c-vars tema="" texto="" lado="" />
+<details class="dropdown {% if lado == 'fin' %}dropdown-end{% else %}dropdown-start{% endif %} ayuda" data-ayuda>
+  <summary class="ayuda-i" aria-label="Ayuda: {{ tema }}" aria-expanded="false"><c-icono nombre="info" clase="size-4" /></summary>
+  <div class="dropdown-content ayuda-panel" role="note">{{ texto }}</div>
+</details>

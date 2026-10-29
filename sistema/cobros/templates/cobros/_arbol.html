@@ -1,0 +1,184 @@
+{% load pesos ui %}
+{# 024/FR-002 a FR-007: tabla de prestaciones. Recibe `form` (con `ramas`), `id` del contenedor y `bloqueado`. #}
+<div id="{{ id }}" class="tc" data-arbol>
+  {% if form.ramas %}
+  <div class="tc-fila tc-th max-lg:hidden" aria-hidden="true">
+    <span>{% if bloqueado %}<c-icono nombre="lock" clase="size-4" />{% endif %}</span>
+    <span>Prestación y profesional</span>
+    <span class="tc-n">Precio</span>
+    <span class="tc-n">Abonado</span>
+    <span class="tc-n">Por abonar</span>
+    <span class="tc-n">A cobrar hoy</span>
+    <span aria-hidden="true"></span>
+  </div>
+  {% endif %}
+  {% firstof id_paciente cobro.id_paciente_dentalink as paciente %}
+  <div class="space-y-3">
+  {% for rama in form.ramas %}
+  <div class="tc-rama" data-rama x-data="{ abierto: false }" x-init="abierto = !!$el.querySelector('.err-msg')">
+    <div class="tc-fila tc-cab">
+      <label class="celda-casilla"><input type="checkbox" data-marcar-rama aria-label="Elegir todo el tratamiento #{{ rama.tratamiento.id }}"{% if bloqueado %} disabled{% endif %}></label>
+      <span class="flex min-w-0 items-center gap-1">
+        <button type="button" class="tc-chev" x-on:click="abierto = !abierto" x-bind:aria-expanded="abierto" aria-expanded="false" aria-controls="{{ id }}-rama-{{ forloop.counter }}" aria-label="Ver u ocultar las prestaciones de #{{ rama.tratamiento.id }}">
+          <span class="inline-flex transition-transform" x-bind:class="abierto && 'rotate-180'"><c-icono nombre="chevron-down" clase="size-4" /></span>
+        </button>
+        <span class="min-w-0 truncate font-bold">#{{ rama.tratamiento.id }}{% if rama.tratamiento.nombre %}: {{ rama.tratamiento.nombre }}{% endif %}</span>
+        {% if dentalink_web and paciente %}<a href="{{ dentalink_web }}/pacientes/{{ paciente }}/tratamiento/{{ rama.tratamiento.id }}" target="_blank" rel="noopener" class="flex-none text-sky-600 hover:text-sky-800" title="Abrir en Dentalink" aria-label="Abrir el tratamiento #{{ rama.tratamiento.id }} en Dentalink, en una pestaña nueva"><c-icono nombre="external-link" clase="size-3.5" /></a>{% endif %}
+        <span class="flex-none whitespace-nowrap text-sm text-ink-3">· {{ rama.filas|length }} prestaci{{ rama.filas|length|pluralize:"ón,ones" }}</span>
+      </span>
+      <span class="tc-n text-sm text-ink-2 max-lg:hidden">{{ rama.precio|pesos }}</span>
+      <span class="tc-n text-sm text-ink-2 max-lg:hidden">{{ rama.abonado|pesos }}</span>
+      <span class="tc-n text-sm font-semibold">{{ rama.saldo|pesos }}</span>
+      <span class="tc-n text-sm font-bold text-brand-ink max-lg:hidden" data-sub-rama>—</span>
+      <span class="max-lg:hidden"></span>
+    </div>
+    <div id="{{ id }}-rama-{{ forloop.counter }}" x-show="abierto" style="display:none">
+      {% for fila in rama.filas %}
+      {% with p=fila.prestacion %}
+      <div class="tc-fila tc-pres" data-fila{% if p.saldo_a_favor %} data-a-favor{% endif %}>
+        <label class="celda-casilla">{{ fila.elegida|campo_accesible }}</label>
+        <div class="tc-nombre min-w-0">
+        <span data-prestacion class="block truncate font-medium" title="{% if p.saldo_a_favor %}Saldo a favor{% else %}{{ p.nombre }}{% endif %}">{% if p.saldo_a_favor %}Saldo a favor{% else %}{{ p.nombre }}{% endif %}</span>
+        <div class="tc-prof" x-data="{ cambiar: false }" x-on:click.outside="cambiar = false" x-on:keydown.escape="cambiar = false">
+          {% if fila.profesional %}
+          <span data-prof-nombre class="truncate">{{ p.profesional_propuesto.nombre }}</span>
+          <span data-prof-cambiado class="tc-punto" role="img" aria-label="Profesional cambiado. Dentalink proponía {{ p.profesional_propuesto.nombre }}" title="Dentalink proponía {{ p.profesional_propuesto.nombre }}" hidden></span>
+          {% if not bloqueado %}
+          <button type="button" class="tc-chev" x-on:click="cambiar = !cambiar" x-bind:aria-expanded="cambiar" aria-expanded="false" aria-label="Cambiar el profesional de {{ p.nombre }}"><c-icono nombre="chevron-down" clase="size-4" /></button>
+          {% endif %}
+          <div class="tc-pop" x-show="cambiar" x-on:change="cambiar = false" x-effect="cambiar && $nextTick(() => { var s = $el.querySelector('select'); s.tomselect ? s.tomselect.focus() : s.focus(); })" style="display:none">
+            <label for="{{ fila.profesional.id_for_label }}" class="sr-only">Profesional de {{ p.nombre }}</label>
+            {{ fila.profesional|campo_accesible }}
+          </div>
+          {% if fila.profesional.errors %}<p class="err-msg" role="alert"><c-icono nombre="circle-alert" clase="size-4" /><span>{{ fila.profesional.errors|join:" " }}</span></p>{% endif %}
+          {% endif %}
+        </div>
+        </div>
+        {% if p.saldo_a_favor %}
+        <span class="max-lg:hidden"></span><span class="max-lg:hidden"></span><span class="max-lg:hidden"></span>
+        {% else %}
+        <span class="tc-n tc-cifra tc-precio"><span class="lg:hidden">Precio </span>{{ p.total|pesos }}</span>
+        <span class="tc-n tc-cifra"><span class="lg:hidden">Abonado </span>{{ p.pagado|pesos }}</span>
+        <span class="tc-n tc-cifra font-medium"{% if fila.reservado %} title="Reservado en otro cobro: {{ fila.reservado|pesos }}"{% endif %}><span class="lg:hidden">Por abonar </span>{{ p.saldo_disponible|pesos }}{% if fila.reservado %}<span class="sr-only">. Reservado en otro cobro: {{ fila.reservado|pesos }}</span>{% endif %}</span>
+        {% endif %}
+        <div data-monto class="tc-monto tabular-nums">
+          {{ fila.monto|campo_accesible }}
+          {% if fila.monto.errors %}<p id="{{ fila.monto.auto_id }}-error" class="err-msg" role="alert" data-monto-error data-texto="{{ fila.monto.errors|join:" " }}">{{ fila.monto.errors|join:" " }}</p>{% endif %}
+        </div>
+        <span class="tc-ico max-lg:hidden" data-parcial role="img" hidden><c-icono nombre="circle-half" clase="size-4" /></span>
+      </div>
+      {% endwith %}
+      {% endfor %}
+    </div>
+  </div>
+  {% empty %}
+  <c-vacio texto="No hay prestaciones con saldo para cobrar." />
+  {% endfor %}
+  </div>
+</div>
+
+<script>
+// Centavos enteros a texto "1.234,50" con el formateador común, sin parseFloat (principio III).
+window.montoDeCentavos = function (c) {
+  var dec = String(c % 100);
+  return window.formatearMonto(Math.floor(c / 100) + "," + (dec.length < 2 ? "0" + dec : dec), true);
+};
+// Después de app.js (validarMonto, errorMonto) y antes del script de la pantalla.
+document.addEventListener("DOMContentLoaded", function () {
+  var cont = document.getElementById("{{ id }}");
+  if (!cont) return;
+  function monto(casilla) { return casilla.closest("[data-fila]").querySelector("input[name^=monto_]"); }
+  function avisar(m) { m.dispatchEvent(new Event("input", { bubbles: true })); }
+  var bloqueado = {{ bloqueado|yesno:"true,false" }};
+
+  // 024/FR-007: pago parcial. 024/FR-003: subtotal de hoy por tratamiento.
+  function parcial(fila) {
+    var m = fila.querySelector("input[name^=monto_]");
+    var ico = fila.querySelector("[data-parcial]");
+    if (!m || !ico) return;
+    var c = m.value.trim() ? window.validarMonto(m.value, true) : null;
+    var saldo = m.dataset.saldo === undefined ? null : Number(m.dataset.saldo);
+    var falta = c && !c.error && saldo !== null ? saldo - c.centavos : 0;
+    ico.hidden = !(falta > 0 && c.centavos > 0);
+    if (!ico.hidden) {
+      var t = "Pago parcial: se cobran $" + window.montoDeCentavos(c.centavos) + " de $" +
+        window.montoDeCentavos(saldo) + ". Quedan $" + window.montoDeCentavos(falta) + ".";
+      ico.setAttribute("aria-label", t);
+      ico.dataset.texto = "Cobro parcial";
+    }
+  }
+  function subtotales() {
+    cont.querySelectorAll("[data-rama]").forEach(function (rama) {
+      var suma = 0, alguna = false;
+      rama.querySelectorAll("[data-fila]").forEach(function (fila) {
+        parcial(fila);
+        var casilla = fila.querySelector("input[name^=elegida_]");
+        var m = fila.querySelector("input[name^=monto_]");
+        if (!casilla || !casilla.checked || !m.value.trim()) return;
+        var r = window.validarMonto(m.value, true);
+        if (!r.error) { suma += r.centavos; alguna = true; }
+      });
+      rama.querySelector("[data-sub-rama]").textContent = alguna ? "$" + window.montoDeCentavos(suma) : "—";
+      // El saldo a favor no tiene saldo propio: la casilla del tratamiento no lo cuenta (024/FR-004).
+      var todas = rama.querySelectorAll("[data-fila]:not([data-a-favor]) input[name^=elegida_]");
+      var marcadas = rama.querySelectorAll("[data-fila]:not([data-a-favor]) input[name^=elegida_]:checked");
+      var cabeza = rama.querySelector("[data-marcar-rama]");
+      cabeza.checked = todas.length > 0 && marcadas.length === todas.length;
+      cabeza.indeterminate = marcadas.length > 0 && marcadas.length < todas.length;
+    });
+  }
+
+  // 024/FR-006: nombre del profesional elegido y marca si no es el que propone Dentalink.
+  function profesional(sel) {
+    var celda = sel.closest(".tc-prof");
+    var op = sel.options[sel.selectedIndex];
+    if (op) celda.querySelector("[data-prof-nombre]").textContent = op.textContent;
+    celda.querySelector("[data-prof-cambiado]").hidden = !sel.value || sel.value === sel.dataset.propuesto;
+  }
+  cont.querySelectorAll("select[name^=profesional_]").forEach(profesional);
+
+  // Al cargar: filas sin marcar con monto vacío y deshabilitado (sin JS el servidor las ignora).
+  if (!bloqueado) cont.querySelectorAll("input[name^=elegida_]").forEach(function (c) {
+    var m = monto(c);
+    if (!c.checked) { m.value = ""; m.disabled = true; }
+  });
+  function marcar(c, si) {
+    var m = monto(c);
+    c.checked = si;
+    if (si) {
+      m.disabled = false;
+      // Saldo a favor (sin data-saldo): vacío. Si no, el saldo disponible.
+      m.value = m.dataset.saldo === undefined ? "" : window.montoDeCentavos(Number(m.dataset.saldo));
+    } else {
+      m.value = "";
+      m.disabled = true;
+      if (window.errorMonto) window.errorMonto(m, "");
+    }
+    avisar(m);
+  }
+  cont.addEventListener("change", function (e) {
+    var c = e.target;
+    if (!c.matches) return;
+    if (c.matches("select[name^=profesional_]")) { profesional(c); return; }
+    if (c.matches("[data-marcar-rama]")) {  // 024/FR-004: todo el tratamiento con su Por abonar
+      var rama = c.closest("[data-rama]");
+      var si = c.checked;  // marcar() avisa con `input` y subtotales() vuelve a calcular la casilla
+      rama.querySelectorAll("[data-fila]:not([data-a-favor]) input[name^=elegida_]").forEach(function (x) {
+        if (x.checked !== si) marcar(x, si);
+      });
+      subtotales();
+      return;
+    }
+    if (!c.matches("input[name^=elegida_]")) return;
+    marcar(c, c.checked);
+    var m = monto(c);
+    if (c.checked && m.dataset.saldo === undefined) m.focus();
+    subtotales();
+  });
+  // El clic en una casilla dispara `input` antes que `change`: la del tratamiento espera a `change`.
+  cont.addEventListener("input", function (e) {
+    if (!(e.target.matches && e.target.matches("[data-marcar-rama]"))) subtotales();
+  });
+  subtotales();
+});
+</script>

@@ -1,0 +1,25 @@
+{% load pesos ui %}
+<tr{% if c.revisado %} class="fila-revisada"{% endif %}{% if es_admin %} data-estado="{{ c.estado }}" data-monto-centavos="{{ c.monto_centavos }}"{% endif %}>
+  {% if es_admin %}
+  <td class="!pr-0 !pl-3"><label class="celda-casilla"><input type="checkbox" name="pk" value="{{ c.pk }}" form="elegidos" aria-label="Elegir cobro {{ c.pk }}"{% if c.pk in elegidos %} checked{% endif %}></label></td>
+  <td class="!pl-0 tabular-nums"><span class="inline-flex items-center gap-1">{% include "cobros/_estado.html" %}<a class="link text-brand-ink inline-flex min-h-[44px] items-center" href="{% url 'cobros:detalle' c.pk %}">{{ c.pk }}</a></span></td>
+  <td class="whitespace-nowrap font-medium tabular-nums">{{ c.monto|monto_corto }}</td>
+  <td class="whitespace-nowrap max-xl:hidden"><span class="inline-flex items-center gap-1">{% include "cobros/_metodo_icono.html" %}{{ c.get_metodo_display }}</span></td>
+  <td class="max-w-[5rem] md:max-w-[8rem]"><span class="block max-w-full truncate leading-[44px]" title="{{ c.nombre_paciente }}">{{ c.nombre_paciente|default:"Cobro N.º" }}{% if not c.nombre_paciente %} {{ c.pk }}{% endif %}</span><small class="sub-movil whitespace-nowrap tabular-nums">{{ c.fecha_alta|date:"H:i d/m/Y" }}</small></td>
+  <td class="max-w-[7rem] max-xl:hidden">{% if c.profesionales %}<span class="block truncate" title="{{ c.profesionales }}">{{ c.profesionales }}</span>{% else %}—{% endif %}</td>
+  <td class="max-lg:hidden">{% if c.destinatario %}<span class="block min-w-[10rem] max-w-[16rem] break-words">{{ c.destinatario.nombre }}</span>{% else %}—{% endif %}</td>
+  <td class="max-xl:hidden">{{ c.creado_por.username|default:"—" }}</td>
+  <td class="max-xl:hidden">{% if c.comprobante %}<a class="link text-brand-ink inline-flex min-h-[44px] items-center" href="{% url 'cobros:comprobante' c.pk %}" target="_blank" rel="noopener" aria-label="Abrir comprobante del cobro {{ c.pk }} en una pestaña nueva"><c-icono nombre="paperclip" /></a>{% else %}—{% endif %}</td>
+  <td class="whitespace-nowrap tabular-nums max-md:hidden">{{ c.fecha_alta|date:"H:i d/m/Y" }}</td>
+  <td class="!px-0">{% include "cobros/_revisado.html" with pref="t" htmx=True %}</td>
+  {% else %}
+  <td class="col-sec max-lg:hidden tabular-nums"><a class="link text-brand-ink inline-flex min-h-[44px] items-center" href="{% url 'cobros:detalle' c.pk %}" aria-label="Cobro N.º {{ c.pk }}">{{ c.pk }}</a></td>
+  <td class="col-sec whitespace-nowrap tabular-nums">{{ c.fecha_alta|date:"H:i d/m/Y" }}<small class="block text-ink-3">{{ c.get_metodo_display }}</small></td>
+  <td class="max-w-[5rem] sm:max-w-[7.5rem] lg:max-w-[7.5rem]"><a class="link text-brand-ink block max-w-full truncate" href="{% url 'cobros:detalle' c.pk %}" title="{{ c.nombre_paciente }}"{% if not c.nombre_paciente %} aria-label="Cobro N.º {{ c.pk }}"{% endif %}>{{ c.nombre_paciente|default:"Cobro N.º" }}{% if not c.nombre_paciente %} {{ c.pk }}{% endif %}</a><small class="sub-movil whitespace-nowrap tabular-nums">{{ c.fecha_alta|date:"H:i d/m/Y" }}</small></td>
+  <td class="col-sec max-lg:hidden">{% if c.metodo == "transferencia" and c.cuenta %}<span class="block truncate" title="{{ c.cuenta.cbu }}">{{ c.cuenta }}</span>{% endif %}</td>
+  <td>{% badge c.estado c.get_estado_display %}</td>
+  <td class="col-monto whitespace-nowrap font-medium">{{ c.monto|monto_corto }}</td>
+  {% if pendientes_operador %}<td class="whitespace-nowrap">hace {{ c.fecha_alta|timesince }}</td>{% endif %}
+  {% endif %}
+</tr>
+{% if avisos_oob %}<div hx-swap-oob="beforeend:[data-avisos]">{% for m in avisos_oob %}<c-aviso nivel="{{ m.level_tag }}">{{ m }}</c-aviso>{% endfor %}</div>{% endif %}

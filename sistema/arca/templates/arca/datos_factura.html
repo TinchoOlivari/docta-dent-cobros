@@ -1,0 +1,34 @@
+{% extends "sistema/base.html" %}
+{% block title %}Datos de la factura del cobro {{ cobro.pk }}{% endblock %}
+{% block migas %}<li><a href="{% url 'cobros:detalle' cobro.pk %}">Cobro {{ cobro.pk }}</a></li><li><span aria-current="page">Datos de la factura</span></li>{% endblock %}
+{% block titulo %}Datos de la factura del cobro {{ cobro.pk }}{% endblock %}
+{% block content %}
+{% url "cobros:detalle" cobro.pk as url_cobro %}
+<div class="max-w-xl">
+{% if emitida %}
+<div class="mb-4"><c-alerta nivel="info">ARCA no permite editar una factura emitida. Si cambiás los datos, el sistema emite una nota de crédito y una factura nueva.</c-alerta></div>
+{% endif %}
+<c-tarjeta>
+<form method="post" data-sin-foco>
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+  <div class="mb-4"><c-alerta nivel="error">{% for e in form.non_field_errors %}{{ e }}{% if not forloop.last %} {% endif %}{% endfor %}</c-alerta></div>
+  {% endif %}
+  {% for campo in form.visible_fields %}
+  {% if campo.name != "nota_credito" %}
+  <c-campo :campo="campo" />
+  {% endif %}
+  {% endfor %}
+  {% if emitida %}
+  <fieldset class="field" id="pregunta-nota-credito">
+    <legend class="lbl-f">{{ pregunta }}</legend>
+    <label class="flex min-h-[44px] items-center gap-2"><input type="radio" name="nota_credito" value="si" required{% if form.nota_credito.value == "si" %} checked{% endif %}> Sí</label>
+    <label class="flex min-h-[44px] items-center gap-2"><input type="radio" name="nota_credito" value="no" required{% if form.nota_credito.value == "no" %} checked{% endif %}> No</label>
+    {% if form.nota_credito.errors %}<p class="err-msg" role="alert"><c-icono nombre="circle-alert" clase="size-4" /><span>{{ form.nota_credito.errors.0 }}</span></p>{% endif %}
+  </fieldset>
+  {% endif %}
+  <c-pie-form :cancelar="url_cobro" />
+</form>
+</c-tarjeta>
+</div>
+{% endblock %}

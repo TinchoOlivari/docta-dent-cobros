@@ -1,0 +1,7 @@
+<c-vars nivel="info" />
+<div class="alert {% if nivel == 'error' %}alert-error{% elif nivel == 'success' %}alert-success{% elif nivel == 'warning' %}alert-warning{% else %}alert-info{% endif %} pointer-events-auto"
+     {% if nivel == "error" %}role="alert"{% else %}role="status" data-autocerrar{% endif %}>
+  {% if nivel == "error" %}<c-icono nombre="circle-alert" />{% elif nivel == "success" %}<c-icono nombre="circle-check" />{% elif nivel == "warning" %}<c-icono nombre="triangle-alert" />{% else %}<c-icono nombre="info" />{% endif %}
+  <span>{{ slot }}</span>
+  <button type="button" class="icon-btn text-current hover:bg-white/20 hover:text-current" aria-label="Cerrar" data-cerrar-aviso><c-icono nombre="x" /></button>
+</div>

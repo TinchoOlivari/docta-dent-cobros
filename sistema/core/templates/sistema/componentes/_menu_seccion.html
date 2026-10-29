@@ -1,0 +1,6 @@
+<div class="nav-sec" x-data="{ abierta: {% if abierta %}true{% else %}false{% endif %} }">
+  <button type="button" class="nav-h" aria-expanded="true" x-bind:aria-expanded="(abierta || collapsed).toString()" x-on:click="abierta = !abierta">
+    <span>{{ titulo }}</span>{% include "iconos/chevron-right.svg" with clase="size-4" etiqueta="" %}
+  </button>
+  <div class="nav-sec-cuerpo" x-show="abierta || collapsed">{{ contenido }}</div>
+</div>

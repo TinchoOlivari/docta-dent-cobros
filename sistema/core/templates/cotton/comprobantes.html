@@ -1,0 +1,13 @@
+<c-vars multiple="" libre="" ayuda="Imagen o PDF, hasta 5 MB." />
+<div data-comprobante {% if multiple %}data-multiple{% endif %}{% if libre %} data-libre{% endif %}>
+  <label class="lbl-f" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+  <label class="drop" for="{{ campo.id_for_label }}">
+    <span class="grid size-12 place-items-center rounded-full bg-elevated text-brand-ink"><c-icono nombre="upload" clase="size-6" /></span>
+    <span class="font-medium">Tocá para elegir o arrastrá el archivo</span>
+    <span class="hint">{{ ayuda }}</span>
+    {{ campo }}
+  </label>
+  <ul data-elegidos class="list-none p-0"></ul>
+  <p class="err-msg" role="alert" data-error hidden></p>
+  {% if campo.errors %}<p class="err-msg" role="alert"><c-icono nombre="circle-alert" clase="size-4" /><span>{{ campo.errors|join:" " }}</span></p>{% endif %}
+</div>

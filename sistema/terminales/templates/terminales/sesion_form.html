@@ -1,0 +1,18 @@
+{% extends "sistema/base.html" %}
+{% block title %}Editar sesión{% endblock %}
+{% block migas %}<li><a href="{% url 'terminales:lista' %}">Terminales POS</a></li><li><a href="{% url 'terminales:detalle' sesion.terminal_id %}">{{ sesion.terminal.nombre }}</a></li><li aria-current="page">Editar sesión</li>{% endblock %}
+{% block titulo %}Editar sesión{% endblock %}
+{% block content %}
+<form method="post" class="max-w-2xl" data-sin-foco>
+<c-tarjeta>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+    <div class="mb-6"><c-alerta nivel="error">{% for e in form.non_field_errors %}{{ e }}{% if not forloop.last %} {% endif %}{% endfor %}</c-alerta></div>
+    {% endif %}
+    {% for campo in form %}
+    <c-campo :campo="campo" />
+    {% endfor %}
+</c-tarjeta>
+<c-pie-form cancelar="{% url 'terminales:detalle' sesion.terminal_id %}" />
+</form>
+{% endblock %}

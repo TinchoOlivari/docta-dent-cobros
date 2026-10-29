@@ -1,0 +1,29 @@
+{% extends "sistema/base.html" %}
+{% block title %}Dentalink{% endblock %}
+{% block migas %}<li><span aria-current="page">Dentalink</span></li>{% endblock %}
+{% block titulo %}Dentalink{% endblock %}
+{% block acciones %}<c-boton href="{% url 'dentalink:envios' %}" icono="send">Envíos a Dentalink</c-boton>{% endblock %}
+{% block content %}
+<div class="flex max-w-3xl flex-col gap-4">
+<c-tarjeta titulo="Copia de Dentalink">
+  <p>Bancos vigentes: {{ copia.bancos }}. Profesionales vigentes: {{ copia.profesionales }}. Medios de pago vigentes: {{ copia.medios }}.</p>
+  <p class="hint mb-4">Último cambio: {% if copia.ultima %}{{ copia.ultima|date:"d/m/Y H:i" }}{% else %}Nunca{% endif %}</p>
+  <form method="post" action="{% url 'dentalink:actualizar' %}">
+    {% csrf_token %}
+    <c-boton icono="rotate-ccw">Actualizar copia</c-boton>
+  </form>
+</c-tarjeta>
+<c-tarjeta titulo="Conexión">
+  <form method="post">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+    <div class="mb-4"><c-alerta nivel="error" titulo="No se pudo guardar.">{% for e in form.non_field_errors %}{{ e }} {% endfor %}</c-alerta></div>
+    {% endif %}
+    {% for campo in form %}
+    <c-campo :campo="campo" />
+    {% endfor %}
+    <c-boton variante="primario" icono="check">Guardar</c-boton>
+  </form>
+</c-tarjeta>
+</div>
+{% endblock %}

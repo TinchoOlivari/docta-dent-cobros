@@ -1,0 +1,2 @@
+{# "Limpiar filtros" solo con algún filtro activo (018/FR-020). `oob`: la respuesta parcial lo reemplaza. #}
+<span id="limpiar-filtros"{% if oob %} hx-swap-oob="true"{% endif %}>{% if hay_filtros %}<a class="link text-brand-ink inline-flex min-h-[44px] items-center text-sm" href="{% url 'cobros:lista' %}">Limpiar filtros</a>{% endif %}</span>

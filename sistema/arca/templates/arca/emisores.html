@@ -1,0 +1,34 @@
+{% extends "sistema/base.html" %}
+{% load ui %}
+{% block title %}Emisores ARCA{% endblock %}
+{% block migas %}<li><span aria-current="page">Emisores ARCA</span></li>{% endblock %}
+{% block titulo %}Emisores ARCA{% endblock %}
+{% block subtitulo %}Datos fiscales y certificados con los que se emiten las facturas.{% endblock %}
+{% block acciones %}<c-boton variante="primario" icono="plus" href="{% url 'arca:nuevo_emisor' %}">Nuevo emisor</c-boton>{% endblock %}
+{% block content %}
+{% if emisores %}
+<div class="card2">
+  <c-tabla titulo_accesible="Emisores ARCA">
+    <thead><tr>
+      <th scope="col">Razón social</th><th scope="col" class="col-sec">CUIT</th><th scope="col" class="col-sec">Punto de venta</th>
+      <th scope="col" class="col-sec">Ambiente</th><th scope="col">Estado</th><th scope="col">Certificado<span class="sr-only"> vence</span></th>
+    </tr></thead>
+    <tbody>
+      {% for e in emisores %}
+      <tr>
+        <td><a class="link text-brand-ink inline-flex min-h-[44px] items-center" href="{% url 'arca:emisor' e.pk %}">{{ e.razon_social }}</a>
+          <span class="sub-movil tabular-nums">CUIT {{ e.cuit }} · PV {{ e.punto_venta }} · {{ e.get_ambiente_display }}</span></td>
+        <td class="col-sec tabular-nums">{{ e.cuit }}</td><td class="col-sec tabular-nums">{{ e.punto_venta }}</td>
+        <td class="col-sec">{{ e.get_ambiente_display }}</td><td>{% badge e.estado e.get_estado_display %}</td>
+        <td class="tabular-nums">{% if e.certificado_vence %}{% include "arca/_vence.html" with cert=e.cert vence=e.certificado_vence corto=True %}{% else %}Sin certificado{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </c-tabla>
+</div>
+{% else %}
+<c-tarjeta><c-vacio icono="landmark" texto="Todavía no hay emisores.">
+  <c-slot name="accion"><c-boton variante="primario" href="{% url 'arca:nuevo_emisor' %}">Crear el primer emisor</c-boton></c-slot>
+</c-vacio></c-tarjeta>
+{% endif %}
+{% endblock %}

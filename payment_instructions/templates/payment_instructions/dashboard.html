@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Docta Dent - Sistema de pagos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="shortcut icon" type="image/png"
+        href="https://doctadent.com.ar/wp-content/uploads/2021/04/ico-Docta-Dent-150x150.png">
+
+</head>
+
+<style>
+    body {
+        background-color: #18201C;
+        color: #EEF3ED;
+    }
+
+    .bg-dd-page { background-color: #18201C; }
+    .bg-dd-surface { background-color: #202A24; }
+    .bg-dd-elevated { background-color: #2B372F; }
+    .bg-dd-inset { background-color: #263129; }
+    .bg-dd-brand { background-color: #A4D468; }
+    .text-dd-primary { color: #EEF3ED; }
+    .text-dd-secondary { color: #C2CEC4; }
+    .text-dd-muted { color: #A6B3A9; }
+    .text-dd-brand { color: #A4D468; }
+    .text-dd-page { color: #18201C; }
+    .border-dd-border { border-color: #3B4A40; }
+    .hover\:bg-dd-elevated:hover { background-color: #334238; }
+    .hover\:border-dd-brand:hover { border-color: #A4D468; }
+    .hover\:text-dd-brand:hover { color: #A4D468; }
+    .hover\:text-dd-secondary:hover { color: #C2CEC4; }
+    .focus\:ring-dd-brand:focus { --tw-ring-color: #A4D468; }
+    .group:hover .group-hover\:text-dd-brand { color: #A4D468; }
+
+    /* Subtle fade animations */
+    @keyframes fade-in-soft {
+        from {
+            opacity: 0;
+            transform: translateY(6px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in {
+        animation: fade-in-soft 320ms ease-out both;
+    }
+</style>
+
+
+<body class="bg-dd-page min-h-screen text-dd-primary">
+    {% include "payment_instructions/_staging_banner.html" %}
+    {% include "payment_instructions/_operator_nav.html" with title="Sistema de pagos" show_brand=True %}
+
+    <div class="max-w-[760px] mx-auto pt-8 sm:pt-16 pb-24 px-4 sm:px-6">
+        <div data-animate="fade-in" class="grid grid-cols-1 sm:grid-cols-2 gap-5 opacity-0">
+            <!-- Crear pago -->
+            <a href="{% url 'payment_instructions:payment_method_selection' %}"
+                class="group flex flex-col gap-3.5 p-8 bg-dd-elevated border-[1.5px] border-dd-border rounded-2xl hover:border-dd-brand transition-all duration-200">
+                <span class="w-12 h-12 rounded-xl bg-dd-inset flex items-center justify-center">
+                    <svg class="w-6 h-6 text-dd-muted group-hover:text-dd-brand transition-colors" fill="none"
+                        stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                        viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 8v8M8 12h8" />
+                    </svg>
+                </span>
+                <span>
+                    <span class="block text-lg font-semibold text-dd-primary mb-1">Crear pago</span>
+                    <span class="block text-[13px] text-dd-muted">Transferencia, efectivo, tarjeta, QR o link</span>
+                </span>
+            </a>
+
+            <!-- Ver transferencias pendientes -->
+            <a href="{% url 'payment_instructions:pending_transfers' %}"
+                class="group relative flex flex-col gap-3.5 p-8 bg-dd-elevated border-[1.5px] border-dd-border rounded-2xl hover:border-dd-brand transition-all duration-200">
+                {% if pendientes_count %}
+                <span id="pendientesBadge"
+                    class="absolute top-4 right-4 min-w-[22px] h-[22px] px-1.5 rounded-full bg-dd-brand text-dd-page text-xs font-bold flex items-center justify-center">
+                    {{ pendientes_count }}
+                </span>
+                {% endif %}
+                <span class="w-12 h-12 rounded-xl bg-dd-inset flex items-center justify-center">
+                    <svg class="w-6 h-6 text-dd-muted group-hover:text-dd-brand transition-colors" fill="none"
+                        stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                        viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 7v5l3.5 2" />
+                    </svg>
+                </span>
+                <span>
+                    <span class="block text-lg font-semibold text-dd-primary mb-1">Transferencias pendientes</span>
+                    <span class="block text-[13px] text-dd-muted">Retomá la creación de los pagos</span>
+                </span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Page-load subtle animations for marked elements
+        document.addEventListener('DOMContentLoaded', function () {
+            const staged = document.querySelectorAll('[data-animate="fade-in"]');
+            staged.forEach((el, idx) => {
+                setTimeout(() => {
+                    el.classList.add('animate-fade-in');
+                    const onEnd = () => {
+                        el.classList.remove('animate-fade-in');
+                        el.classList.remove('opacity-0');
+                        el.removeEventListener('animationend', onEnd);
+                    };
+                    el.addEventListener('animationend', onEnd);
+                }, idx * 60);
+            });
+        });
+    </script>
+</body>
+
+</html>

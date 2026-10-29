@@ -1,0 +1,101 @@
+{% extends "sistema/base.html" %}
+{% load ui %}
+{% block title %}{{ terminal.nombre }}{% endblock %}
+{% block migas %}<li><a href="{% url 'terminales:lista' %}">Terminales POS</a></li><li aria-current="page">{{ terminal.nombre }}</li>{% endblock %}
+{% block titulo %}{{ terminal.nombre }}{% endblock %}
+{% block subtitulo %}{% badge terminal.estado terminal.get_estado_display %}{% endblock %}
+{% block acciones %}
+  <c-boton variante="secundario" href="{% url 'auditoria:historial' 'terminales.terminal' terminal.pk %}">Historial</c-boton>
+  <c-boton variante="primario" href="{% url 'terminales:editar' terminal.pk %}">Editar</c-boton>
+{% endblock %}
+{% block content %}
+<div class="flex flex-col gap-6">
+  <c-tarjeta titulo="Datos">
+    <dl class="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div><dt class="text-sm text-ink-3">Proveedor</dt><dd class="font-medium">{{ terminal.proveedor }}</dd></div>
+      <div><dt class="text-sm text-ink-3">Estado</dt><dd class="font-medium">{{ terminal.get_estado_display }}</dd></div>
+      <div class="sm:col-span-2 lg:col-span-3"><p class="font-medium">Métodos: {{ terminal.metodos_texto|default:"—" }}</p></div>
+      <div class="sm:col-span-2 lg:col-span-3"><dt class="text-sm text-ink-3">Observaciones</dt><dd class="font-medium">{{ terminal.observaciones|default:"—" }}</dd></div>
+    </dl>
+    <form method="post" action="{% url 'terminales:estado' terminal.pk %}" class="mt-6 flex flex-col gap-2 border-t border-line pt-6 sm:flex-row sm:items-center" data-sin-foco>
+      {% csrf_token %}
+      <select name="estado" aria-label="Estado" class="select sm:w-56">
+        {% for v, t in estados %}<option value="{{ v }}"{% if v == terminal.estado %} selected{% endif %}>{{ t }}</option>{% endfor %}
+      </select>
+      <c-boton variante="secundario">Cambiar estado</c-boton>
+    </form>
+  </c-tarjeta>
+
+  <c-tarjeta titulo="Sesiones">
+    <div class="card2">
+      <c-tabla titulo_accesible="Sesiones de {{ terminal.nombre }}">
+        <thead><tr><th>Cuenta</th><th class="col-sec">Destinatario</th><th>Inicio</th><th class="col-sec">Fin</th><th><span class="sr-only">Acciones</span></th></tr></thead>
+        <tbody>
+        {% for s in sesiones %}
+        <tr>
+          <td>{{ s.cuenta }}{% if not s.fin %} <span class="bd bd-ok">Abierta</span>{% endif %}<span class="sub-movil">{{ s.cuenta.destinatario }}</span></td>
+          <td class="col-sec">{{ s.cuenta.destinatario }}</td>
+          <td class="tabular-nums">{{ s.inicio|date:"d/m/Y H:i:s" }}<span class="sub-movil">Fin: {% if s.fin %}{{ s.fin|date:"d/m/Y H:i:s" }}{% else %}—{% endif %}</span></td>
+          <td class="col-sec tabular-nums">{% if s.fin %}{{ s.fin|date:"d/m/Y H:i:s" }}{% else %}—{% endif %}</td>
+          <td class="md:min-w-72">
+            <div class="flex flex-wrap items-center justify-end gap-1">
+              <c-boton variante="fantasma" href="{% url 'auditoria:historial' 'terminales.sesion' s.pk %}">Historial</c-boton>
+              <c-boton variante="fantasma" href="{% url 'terminales:editar_sesion' s.pk %}">Editar</c-boton>
+              <form method="post" id="borrar-sesion-{{ s.pk }}" action="{% url 'terminales:borrar_sesion' s.pk %}">
+                {% csrf_token %}
+                <c-boton variante="fantasma" form="borrar-sesion-{{ s.pk }}" data-confirmar-form="borrar-sesion-{{ s.pk }}" data-confirmar-dialogo="confirmar-borrar-{{ s.pk }}">Borrar</c-boton>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% if s.seguida %}
+        <tr><td colspan="5">
+          <form method="post" action="{% url 'terminales:corregir' s.pk %}" class="flex flex-col gap-2 sm:flex-row sm:items-end">
+            {% csrf_token %}
+            <c-campo :campo="s.form_corregir.hora" />
+            <div class="field"><c-boton variante="secundario">Corregir</c-boton></div>
+          </form>
+        </td></tr>
+        {% endif %}
+        {% empty %}
+        <tr><td colspan="5"><c-vacio texto="Todavía no hay sesiones." /></td></tr>
+        {% endfor %}
+        </tbody>
+      </c-tabla>
+    </div>
+  </c-tarjeta>
+
+  {% if abierta %}
+  <c-tarjeta titulo="Cambiar cuenta">
+    <form method="post" action="{% url 'terminales:cambiar_cuenta' terminal.pk %}" class="grid items-end gap-4 md:grid-cols-[1fr_1fr_auto]">
+      {% csrf_token %}
+      <c-campo :campo="form_cambiar.cuenta" />
+      <c-campo :campo="form_cambiar.hora" />
+      <div class="field"><c-boton variante="primario">Cambiar</c-boton></div>
+    </form>
+  </c-tarjeta>
+  {% for s in sesiones %}{% if not s.fin %}
+  <c-tarjeta titulo="Cerrar sesión">
+    <form method="post" id="cerrar-{{ s.pk }}" action="{% url 'terminales:cerrar' s.pk %}" class="grid items-end gap-4 md:grid-cols-[1fr_auto]">
+      {% csrf_token %}
+      <c-campo :campo="form_cerrar.fin" />
+      <div class="field"><c-boton variante="secundario" form="cerrar-{{ s.pk }}" data-confirmar-form="cerrar-{{ s.pk }}" data-confirmar-dialogo="confirmar-cerrar-{{ s.pk }}">Cerrar</c-boton></div>
+    </form>
+  </c-tarjeta>
+  {% endif %}{% endfor %}
+  {% else %}
+  <c-tarjeta titulo="Abrir sesión">
+    <form method="post" action="{% url 'terminales:abrir' terminal.pk %}" class="grid items-end gap-4 md:grid-cols-[1fr_1fr_auto]">
+      {% csrf_token %}
+      <c-campo :campo="form_abrir.cuenta" />
+      <c-campo :campo="form_abrir.inicio" />
+      <div class="field"><c-boton variante="primario">Abrir</c-boton></div>
+    </form>
+  </c-tarjeta>
+  {% endif %}
+</div>
+{% for s in sesiones %}
+{% if not s.fin %}<c-confirmar id="confirmar-cerrar-{{ s.pk }}" titulo="Cerrar sesión" :texto="s.texto_cierre" boton="Cerrar" variante="primario" />{% endif %}
+<c-confirmar id="confirmar-borrar-{{ s.pk }}" titulo="Borrar sesión" texto="La sesión deja de contar para el acumulado de su cuenta." boton="Borrar" />
+{% endfor %}
+{% endblock %}

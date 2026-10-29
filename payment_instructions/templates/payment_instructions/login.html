@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Login - Sistema de pagos por transferencia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<style>
+    body {
+        background-color: #18201C;
+        color: #EEF3ED;
+    }
+
+    input:-webkit-autofill {
+        box-shadow: 0 0 0 1000px #263129 inset !important;
+        -webkit-text-fill-color: #EEF3ED !important;
+    }
+
+    .bg-dd-page { background-color: #18201C; }
+    .bg-dd-surface { background-color: #202A24; }
+    .bg-dd-inset { background-color: #263129; }
+    .bg-dd-error-bg { background-color: #3A2426; }
+    .text-dd-primary { color: #EEF3ED; }
+    .text-dd-muted { color: #A6B3A9; }
+    .text-dd-brand { color: #A4D468; }
+    .text-dd-error { color: #F2A6A6; }
+    .border-dd-border { border-color: #3B4A40; }
+    .border-dd-error { border-color: #7C3A3A; }
+    .hover\:bg-dd-brand-active:hover { background-color: #78A842; }
+    .hover\:text-dd-primary:hover { color: #EEF3ED; }
+    .focus\:border-dd-brand:focus { border-color: #A4D468; }
+    .focus\:ring-dd-brand:focus { --tw-ring-color: #A4D468; }
+
+    input::placeholder {
+        color: #A6B3A9;
+    }
+</style>
+
+<body class="bg-dd-page min-h-screen flex flex-col items-center justify-center px-6 text-dd-primary">
+    {% include "payment_instructions/_staging_banner.html" %}
+    <div class="max-w-md w-full space-y-8">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-bold text-dd-primary">
+                Sistema de pagos por transferencia
+            </h2>
+            <h3 class="text-center text-2xl font-bold text-dd-brand">
+                Docta Dent
+            </h3>
+        </div>
+
+
+        <form class="mt-8 space-y-6" method="post">
+            {% csrf_token %}
+            <div class="space-y-4">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-dd-muted">
+                        Usuario
+                    </label>
+                    <input type="text" id="username" name="username" required
+                        class="mt-1 block w-full px-3 py-2 bg-dd-inset border border-dd-border text-dd-primary rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-dd-brand focus:border-dd-brand"
+                        placeholder="Ingrese su usuario">
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-medium text-dd-muted">
+                        Contraseña
+                    </label>
+                    <div class="mt-1 relative">
+                        <input type="password" id="password" name="password" required
+                            class="block w-full pr-10 px-3 py-2 bg-dd-inset border border-dd-border text-dd-primary rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-dd-brand focus:border-dd-brand"
+                            placeholder="Ingrese su contraseña">
+                        <button type="button" id="togglePassword" aria-label="Mostrar u ocultar contraseña"
+                            class="absolute inset-y-0 right-0 px-3 flex items-center text-dd-muted hover:text-dd-primary focus:outline-none">
+                            <!-- Eye open icon -->
+                            <svg id="eyeOpenIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5 hidden">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.51 7.36 4.5 12 4.5c4.642 0 8.58 3.012 9.964 7.178.07.207.07.436 0 .643C20.58 15.488 16.642 18.5 12 18.5c-4.642 0-8.58-3.012-9.964-7.178z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <!-- Eye closed icon -->
+                            <svg id="eyeClosedIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c1.295 0 2.53-.214 3.675-.609" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.5a10.523 10.523 0 01-4.293 5.943" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.228 6.228L3 3m3.228 3.228L21 21" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <button type="submit"
+                    class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-[#8CBE4F] hover:bg-dd-brand-active focus:outline-none focus:ring-2 focus:ring-dd-brand">
+                    Ingresar
+                </button>
+            </div>
+        </form>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="bg-dd-error-bg border border-dd-error text-dd-error px-4 py-3 rounded relative" role="alert">
+                <span class="block sm:inline">{{ message }}</span>
+            </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var passwordInput = document.getElementById('password');
+            var toggleButton = document.getElementById('togglePassword');
+            var eyeOpen = document.getElementById('eyeOpenIcon');
+            var eyeClosed = document.getElementById('eyeClosedIcon');
+
+            if (passwordInput && toggleButton && eyeOpen && eyeClosed) {
+                toggleButton.addEventListener('click', function () {
+                    var isPassword = passwordInput.getAttribute('type') === 'password';
+                    passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+                    eyeOpen.classList.toggle('hidden', !isPassword);
+                    eyeClosed.classList.toggle('hidden', isPassword);
+                    toggleButton.setAttribute('aria-pressed', String(isPassword));
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,62 @@
+{% extends "sistema/base.html" %}
+{% load pesos ui %}
+{% block title %}Lista de prioridad{% endblock %}
+{% block migas %}<li aria-current="page">Lista de prioridad</li>{% endblock %}
+{% block titulo %}Lista de prioridad{% endblock %}
+{% block subtitulo %}Los cobros por transferencia van a la primera cuenta con cupo.{% endblock %}
+{% load static %}
+{% block scripts %}
+<script defer src="{% static 'sistema/vendor/sortable-1.15.7.min.js' %}"></script>
+<script defer src="{% static 'sistema/js/orden.js' %}"></script>
+{% endblock %}
+{% block content %}
+{% if cuentas %}
+<div x-data="{ q: '', ok(t) { const n = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); return n(t).includes(n(this.q.trim())); } }" class="flex flex-col gap-4">
+<c-tarjeta>
+  <div class="field !mb-0 max-w-md">
+    <label for="f-q" class="lbl-f">Buscar</label>
+    <input class="input" type="search" id="f-q" x-model="q" placeholder="Buscar por destinatario o alias" autocomplete="off">
+  </div>
+</c-tarjeta>
+<section class="card2">
+  <c-tabla titulo_accesible="Lista de prioridad de cuentas">
+    <thead>
+      <tr>
+        <th><span class="sr-only md:not-sr-only">Posición</span><span class="md:hidden" aria-hidden="true">N.º</span></th><th>Destinatario</th><th>Cupos</th><th class="col-sec">Mover</th>
+      </tr>
+    </thead>
+    <tbody data-ordenable>
+    {% for c in cuentas %}
+      <tr data-t="{{ c.destinatario.nombre }} {{ c.alias }}" x-show="ok($el.dataset.t)">
+        <td class="font-semibold"><span class="inline-flex items-center gap-1"><span data-asa hidden aria-hidden="true" tabindex="-1" class="size-11 cursor-grab items-center justify-center text-ink-3 touch-none"><c-icono nombre="grip-vertical" clase="size-5" /></span>{{ c.posicion }}</span></td>
+        <td><span class="font-medium">{{ c.destinatario.nombre }}</span><span class="block text-sm text-ink-3 tabular-nums">{{ c }}</span>
+          <div class="mt-2 md:hidden"><form method="post" action="{% url 'asignacion:mover' c.pk %}" class="flex flex-col gap-2" data-sin-foco>
+              {% csrf_token %}
+              <input type="text" inputmode="numeric" name="posicion" class="input campo-corto tabular-nums" aria-label="Posición">
+              <c-boton variante="secundario">Mover</c-boton>
+            </form></div></td>
+        <td class="md:min-w-56">
+          <p class="lg:whitespace-nowrap text-sm tabular-nums text-ink-2"><span class="text-ink-3">Mensual:</span> Recibido {{ c.recibido_mes|pesos }} · Reservado {{ c.reservado_mes|pesos }} · Cupo {{ c.cupo_mensual|pesos }}{% if c.excedente_mes %} · Excedente {{ c.excedente_mes|pesos }}{% endif %}</p>
+          {% barra c.recibido_mes c.tope_mensual_periodo etiqueta="Tope mensual de "|add:c.destinatario.nombre texto=False %}
+          {% if c.tope_semanal_periodo == 0 %}<p class="lg:whitespace-nowrap text-sm text-ink-2"><span class="text-ink-3">Semanal:</span> Sin tope</p>{% else %}
+          <p class="lg:whitespace-nowrap text-sm tabular-nums text-ink-2"><span class="text-ink-3">Semanal:</span> Recibido {{ c.recibido_semana|pesos }} · Reservado {{ c.reservado_semana|pesos }} · Cupo {{ c.cupo_semanal|pesos }}</p>
+          {% barra total=c.tope_semanal_periodo restante=c.cupo_semanal etiqueta="Tope semanal de "|add:c.destinatario.nombre texto=False %}
+          {% endif %}
+        </td>
+        <td class="col-sec">
+          <form method="post" action="{% url 'asignacion:mover' c.pk %}" class="flex items-center gap-2" data-mover data-sin-foco>
+            {% csrf_token %}
+            <input type="text" inputmode="numeric" name="posicion" class="input campo-corto tabular-nums" aria-label="Posición">
+            <c-boton variante="secundario">Mover</c-boton>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </c-tabla>
+</section>
+</div>
+{% else %}
+<c-vacio texto="Todavía no hay cuentas en la lista de prioridad." />
+{% endif %}
+{% endblock %}

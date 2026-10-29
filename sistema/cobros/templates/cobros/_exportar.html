@@ -1,0 +1,14 @@
+{# Menú "Exportar" del administrador (018/FR-021). Toma el filtro de `query`. `parcial`: la respuesta de htmx lo reemplaza. #}
+<details id="exportar" class="dropdown dropdown-end" data-menu{% if parcial %} hx-swap-oob="true"{% endif %}>
+  <summary class="btn btn-secundario" aria-expanded="false"><c-icono nombre="file-down" clase="size-5" /><span>Exportar</span></summary>
+  <div class="dropdown-content ayuda-panel">
+    <ul class="menu w-full p-0">
+      <li><a href="{% url 'reportes:cobros_descargar' %}?{{ query }}&amp;formato=csv&amp;por=cobro">CSV</a></li>
+      <li><a href="{% url 'reportes:cobros_descargar' %}?{{ query }}&amp;formato=xlsx&amp;por=cobro">Excel</a></li>
+      <li><a href="{% url 'reportes:cobros_descargar' %}?{{ query }}&amp;formato=csv&amp;por=item">CSV por ítem</a></li>
+      <li><a href="{% url 'reportes:cobros_descargar' %}?{{ query }}&amp;formato=xlsx&amp;por=item">Excel por ítem</a></li>
+      <li><a href="{% url 'reportes:cobros_descargar' %}?{{ query_sin_por }}&amp;formato=zip">Comprobantes (zip)</a></li>
+    </ul>
+    <p class="hint mt-2">Descarga los cobros del filtro. «Por ítem» da una fila por prestación. «Comprobantes (zip)» junta los archivos del filtro.</p>
+  </div>
+</details>

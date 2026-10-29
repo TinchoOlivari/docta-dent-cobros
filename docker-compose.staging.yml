@@ -1,0 +1,132 @@
+# Staging stack — completely independent from production.
+# Does NOT use docker-compose.override.yml or production volumes/containers.
+#
+# Usage:
+#   docker compose -f docker-compose.staging.yml up -d --build
+#
+# Migrations run automatically in docker/web-entrypoint.sh before gunicorn binds.
+#
+# Production is unaffected: use `docker compose up -d` (default files only).
+
+name: doctadent-staging
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: django_db_staging
+    restart: unless-stopped
+    # POSTGRES_* come from .env.staging via env_file. Do NOT set them through
+    # ${...} interpolation here: compose resolves those from the project .env,
+    # which belongs to production, and the db would initialise with production's
+    # password while web authenticates with the staging one.
+    env_file:
+      - .env.staging
+    volumes:
+      - staging_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - staging
+
+  redis:
+    image: redis:7-alpine
+    container_name: django_redis_staging
+    restart: unless-stopped
+    volumes:
+      - staging_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - staging
+
+  web:
+    build: .
+    container_name: django_web_staging
+    restart: unless-stopped
+    env_file:
+      - .env.staging
+    volumes:
+      - .:/app
+      - staging_static_volume:/app/staticfiles
+      - staging_media_volume:/app/media
+    expose:
+      - "8000"
+    healthcheck:
+      # gunicorn only binds after migrate finishes, so an open port means the schema is ready
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 8000), 5).close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - staging
+
+  celery:
+    build: .
+    container_name: django_celery_staging
+    restart: unless-stopped
+    command: ["/bin/sh", "-c", "./docker/celery-entrypoint.sh"]
+    env_file:
+      - .env.staging
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    networks:
+      - staging
+
+  nginx:
+    image: nginx:alpine
+    container_name: django_nginx_staging
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - staging_static_volume:/app/staticfiles
+      - staging_media_volume:/app/media
+      - ./nginx/staging.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certbot_staging/www:/var/www/certbot
+      - ./certbot_staging/conf:/etc/letsencrypt
+    depends_on:
+      - web
+    networks:
+      - staging
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+
+  certbot:
+    image: certbot/certbot
+    container_name: django_certbot_staging
+    volumes:
+      - ./certbot_staging/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    depends_on:
+      - nginx
+    networks:
+      - staging
+
+volumes:
+  staging_postgres_data:
+  staging_redis_data:
+  staging_static_volume:
+  staging_media_volume:
+
+networks:
+  staging:
+    name: doctadent-staging-net

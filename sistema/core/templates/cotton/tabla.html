@@ -1,0 +1,7 @@
+<c-vars titulo_accesible="" id="" compacta="" />
+<div class="tw" {% if id %}id="{{ id }}"{% endif %}>
+  <table class="t{% if compacta %} table table-xs t-xs{% endif %}">
+    <caption class="sr-only">{{ titulo_accesible }}</caption>
+    {{ slot }}
+  </table>
+</div>

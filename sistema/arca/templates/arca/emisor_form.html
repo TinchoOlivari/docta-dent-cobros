@@ -1,0 +1,40 @@
+{% extends "sistema/base.html" %}
+{% load ui %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block migas %}<li><a href="{% url 'arca:emisores' %}">Emisores ARCA</a></li><li><span aria-current="page">{{ titulo }}</span></li>{% endblock %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block acciones %}
+{% if emisor %}<c-boton href="{% url 'auditoria:historial' 'arca.emisor' emisor.pk %}">Historial</c-boton>{% else %}<c-boton href="{% url 'arca:emisores' %}">Cancelar</c-boton>{% endif %}
+{% endblock %}
+{% block content %}
+<div class="max-w-xl space-y-4">
+{% if emisor %}
+<c-tarjeta titulo="Estado del emisor">
+  <p class="mb-4 text-ink-2">Estado: {{ emisor.get_estado_display }}.
+    {% if emisor.certificado_vence %}{% include "arca/_vence.html" with vence=emisor.certificado_vence %}{% else %}Sin certificado.{% endif %}</p>
+  <form method="post" action="{% url 'arca:estado_emisor' emisor.pk %}" id="form-estado">
+    {% csrf_token %}
+    {% if emisor.estado == "activo" %}
+    <input type="hidden" name="estado" value="inactivo"><c-boton data-confirmar-form="form-estado" data-confirmar-dialogo="confirmar-desactivar">Desactivar</c-boton>
+    {% else %}
+    <input type="hidden" name="estado" value="activo"><c-boton>Activar</c-boton>
+    {% endif %}
+  </form>
+  {% if emisor.estado == "activo" %}<c-confirmar id="confirmar-desactivar" titulo="Desactivar el emisor" boton="Desactivar">{{ texto_desactivar }}</c-confirmar>{% endif %}
+</c-tarjeta>
+{% endif %}
+<c-tarjeta titulo="Datos fiscales y certificados">
+  <form method="post" enctype="multipart/form-data"{% if emisor %} data-sin-foco{% endif %}>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+    <div class="mb-4"><c-alerta nivel="error">{% for e in form.non_field_errors %}{{ e }}{% if not forloop.last %} {% endif %}{% endfor %}</c-alerta></div>
+    {% endif %}
+    {% for campo in form %}
+    {% if campo.name == "certificado" or campo.name == "clave" %}<c-comprobantes :campo="campo" libre ayuda="{% if campo.name == 'certificado' %}Archivo .crt o .pem.{% else %}Archivo .key o .pem.{% endif %}" />
+    {% else %}<c-campo :campo="campo" />{% endif %}
+    {% endfor %}
+    <c-pie-form cancelar="{% url 'arca:emisores' %}" />
+  </form>
+</c-tarjeta>
+</div>
+{% endblock %}

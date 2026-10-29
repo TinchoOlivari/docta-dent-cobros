@@ -1,0 +1,34 @@
+{% load ui %}
+{% if request.user.role == "administrator" %}
+  {% seccion "Cobros" plano=plano %}
+  {% menu_item "usuarios:panel" "Panel" "layout-dashboard" %}
+  {% menu_item "dentalink:pacientes" "Nuevo cobro" "plus" "dentalink:paciente" "cobros:nuevo" %}
+  {% menu_item "cobros:lista" "Cobros" "receipt" "cobros:detalle" "cobros:items" "cobros:editar" %}
+  {% menu_item "cobros:complementarios" "Pagos complementarios" "banknote" "cobros:complementario_nuevo" "cobros:complementario_detalle" "cobros:complementario_editar" %}
+  {% endseccion %}
+  {% seccion "Cuentas y reglas" plano=plano %}
+  {% menu_item "destinatarios:lista" "Destinatarios" "landmark" "destinatarios:nuevo" "destinatarios:detalle" "destinatarios:editar" %}
+  {% menu_item "destinatarios:proveedores" "Proveedores" "building-2" %}
+  {% menu_item "terminales:lista" "Terminales POS" "credit-card" "terminales:nueva" "terminales:detalle" "terminales:editar" %}
+  {% menu_item "terminales:cuentas" "Cuentas POS" "wallet" %}
+  {% menu_item "asignacion:lista" "Lista de prioridad" "list-ordered" %}
+  {% menu_item "automatizacion:lista" "Reglas" "sliders-horizontal" "automatizacion:nueva" "automatizacion:editar" %}
+  {% endseccion %}
+  {% seccion "Dentalink y ARCA" plano=plano %}
+  {% menu_item "dentalink:configuracion" "Dentalink" "plug" %}
+  {% menu_item "dentalink:envios" "Envíos a Dentalink" "send" %}
+  {% menu_item "arca:emisores" "Emisores ARCA" "file-text" "arca:nuevo_emisor" "arca:emisor" %}
+  {% menu_item "arca:libro" "Libro IVA Ventas" "book-open" %}
+  {% endseccion %}
+  {% seccion "Administración" plano=plano %}
+  {% menu_item "auditoria:eventos" "Auditoría" "shield-check" "auditoria:historial" %}
+  {% menu_item "avisos:configuracion" "Avisos" "bell" %}
+
+  {% menu_item "usuarios:lista" "Usuarios" "users" "usuarios:nuevo" "usuarios:editar" "usuarios:contrasena" %}
+  {% endseccion %}
+{% elif request.user.role == "operator" %}
+  {% menu_item "usuarios:operador" "Cobros" "receipt" "cobros:detalle" "cobros:items" %}
+  {% menu_item "dentalink:pacientes" "Nuevo cobro" "plus" "dentalink:paciente" "cobros:nuevo" %}
+{% elif request.user.role == "professional" %}
+  {% menu_item "usuarios:profesional" "Mis ítems" "user" %}
+{% endif %}

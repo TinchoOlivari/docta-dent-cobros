@@ -1,0 +1,50 @@
+{% extends "sistema/base.html" %}
+{% load pesos ui %}
+{% block title %}Mis ítems{% endblock %}
+{% block migas %}<li><span aria-current="page">Mis ítems</span></li>{% endblock %}
+{% block titulo %}Mis ítems{% endblock %}
+{% block subtitulo %}{% if perfil and perfil.id_profesional_dentalink %}Profesional de Dentalink: {{ perfil.nombre_profesional_dentalink }}{% else %}Sin vínculo a un profesional de Dentalink.{% endif %}{% if destinatario %} · Destinatario: {{ destinatario.nombre }}{% endif %}{% endblock %}
+{% block content %}
+<div class="flex flex-col gap-6">
+<c-tarjeta>
+  <form method="get" class="filtros" data-sin-foco>
+    <div class="field !mb-0"><label for="id_q" class="lbl-f">Buscar paciente</label><input class="input" id="id_q" type="search" name="q" value="{{ q }}"></div>
+    <div class="field !mb-0"><label for="id_mes" class="lbl-f">Mes</label><input class="input" id="id_mes" type="month" name="mes" value="{{ mes|date:'Y-m' }}" max="{{ corriente|date:'Y-m' }}"></div>
+    <c-boton variante="primario">Ver</c-boton>
+  </form>
+</c-tarjeta>
+{% if reporte %}
+<c-tarjeta>
+<h2 class="mb-4 text-lg font-semibold">Recibido vs. esperado — {{ destinatario.nombre }}</h2>
+{% include "reportes/_reporte.html" %}
+</c-tarjeta>
+{% endif %}
+{% if con_vinculo %}
+<c-tarjeta>
+  {% if q %}<p class="mb-1 text-sm text-ink-2">Resultados para «{{ q }}» en todos los meses</p>{% endif %}
+  <p class="mb-4 text-lg font-semibold tabular-nums">{% if q %}Total{% else %}Total del mes{% endif %}: {{ total|pesos }}</p>
+{% if pagina %}
+<c-tabla titulo_accesible="Ítems del mes">
+  <thead><tr><th>Fecha</th><th>Paciente</th><th class="col-sec max-lg:hidden">Tratamiento</th><th class="col-sec">Prestación</th><th class="col-monto">Monto</th><th class="col-sec max-lg:hidden">Método de cobro</th><th>Estado</th></tr></thead>
+  <tbody>
+    {% for i in pagina %}
+    <tr>
+      <td>{{ i.cobro.fecha|date:"d/m/Y H:i" }}</td>
+      <td>{{ i.cobro.nombre_paciente }}<span class="sub-movil">{% if i.saldo_a_favor %}Saldo a favor{% else %}{{ i.nombre_prestacion }}{% endif %}</span><span class="sub-movil">{{ i.nombre_tratamiento }} · {{ i.cobro.get_metodo_display }}</span></td>
+      <td class="col-sec max-lg:hidden">{{ i.nombre_tratamiento }}</td>
+      <td class="col-sec">{% if i.saldo_a_favor %}Saldo a favor{% else %}{{ i.nombre_prestacion }}{% endif %}</td>
+      <td class="col-monto">{{ i.monto|pesos }}</td>
+      <td class="col-sec max-lg:hidden">{{ i.cobro.get_metodo_display }}</td>
+      <td>{% badge i.cobro.estado i.cobro.get_estado_display %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</c-tabla>
+{% if q %}{% with qe=q|urlencode %}{% with query="q="|add:qe %}<c-paginacion :pagina="pagina" :query="query" />{% endwith %}{% endwith %}{% else %}{% with m=mes|date:"Y-m" %}{% with query="mes="|add:m %}<c-paginacion :pagina="pagina" :query="query" />{% endwith %}{% endwith %}{% endif %}
+{% else %}
+<c-vacio texto="Todavía no hay ítems." />
+{% endif %}
+</c-tarjeta>
+{% endif %}
+</div>
+{% endblock %}

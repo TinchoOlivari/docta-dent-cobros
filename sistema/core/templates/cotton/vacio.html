@@ -1,0 +1,11 @@
+<c-vars icono="inbox" texto="" filtrado="" limpiar="" />
+<div class="vacio" data-vacio>
+  <c-icono :nombre="icono" clase="size-8" />
+  {% if filtrado %}
+  <p>No hay resultados con estos filtros.</p>
+  <div><a href="{{ limpiar }}" class="link">Limpiar filtros</a></div>
+  {% else %}
+  <p>{{ texto }}</p>
+  {% if accion %}<div>{{ accion }}</div>{% endif %}
+  {% endif %}
+</div>

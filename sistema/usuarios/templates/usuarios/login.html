@@ -1,0 +1,44 @@
+{% extends "sistema/base.html" %}
+{% load ui %}
+{% block title %}Ingresar{% endblock %}
+{% block content %}
+<div class="login">
+  <section class="login-side" aria-hidden="true">
+    <div class="sb-brand"><span class="logo">DD</span><span>Docta Dent</span></div>
+    <div>
+      <h2>Cada cobro, en la cuenta correcta.</h2>
+      <p>Registrá el cobro, subí el comprobante y dejá que el sistema elija el destinatario.</p>
+    </div>
+    <small>&nbsp;</small>
+  </section>
+  <div class="login-form">
+    <div class="card2" x-data="{ mostrar: false }">
+      <div class="logo mb-6" aria-hidden="true">DD</div>
+      <h1 class="mb-1 text-2xl font-semibold">Ingresar</h1>
+      <p class="mb-6 text-ink-2">Usá tu usuario de Docta Dent.</p>
+      <form method="post">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="mb-4">
+            <c-alerta nivel="error">{% for e in form.non_field_errors %}{{ e }}{% if not forloop.last %} {% endif %}{% endfor %}</c-alerta>
+          </div>
+        {% endif %}
+        <c-campo :campo="form.username" />
+        <div class="field">
+          <label for="{{ form.password.id_for_label }}" class="lbl-f">{{ form.password.label }}</label>
+          <div class="pw">
+            {{ form.password|campo_accesible }}
+            <button type="button" class="icon-btn" x-on:click="mostrar = !mostrar; $root.querySelector('input[name=password]').type = mostrar ? 'text' : 'password'" x-bind:aria-pressed="mostrar" aria-pressed="false" aria-label="Mostrar contraseña"><c-icono nombre="eye" /></button>
+          </div>
+          {% for error in form.password.errors %}
+            <p class="err-msg" role="alert"><c-icono nombre="circle-alert" clase="size-4" /><span>{{ error }}</span></p>
+          {% endfor %}
+        </div>
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+        <c-boton variante="primario" bloque>Ingresar</c-boton>
+      </form>
+      <p class="hint mt-6 text-center">¿Olvidaste tu contraseña? Pedí un reinicio a un administrador.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

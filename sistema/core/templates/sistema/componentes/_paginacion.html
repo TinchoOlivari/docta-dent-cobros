@@ -1,0 +1,7 @@
+{% if pagina and pagina.paginator.num_pages > 1 %}
+<nav aria-label="Paginación" class="pager">
+  {% if pagina.has_previous %}<a class="btn btn-secundario" href="?{% if page_primero %}page={{ pagina.previous_page_number }}{% if query %}&{{ query }}{% endif %}{% else %}{% if query %}{{ query }}&{% endif %}page={{ pagina.previous_page_number }}{% endif %}">Anterior</a>{% else %}<span aria-hidden="true">&nbsp;</span>{% endif %}
+  <span class="tabular-nums">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+  {% if pagina.has_next %}<a class="btn btn-secundario" href="?{% if page_primero %}page={{ pagina.next_page_number }}{% if query %}&{{ query }}{% endif %}{% else %}{% if query %}{{ query }}&{% endif %}page={{ pagina.next_page_number }}{% endif %}">Siguiente</a>{% else %}<span aria-hidden="true">&nbsp;</span>{% endif %}
+</nav>
+{% endif %}

@@ -1,0 +1,117 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extrastyle %}
+<style>
+    .copy-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+    .copy-textarea {
+        width: 100%;
+        min-height: 300px;
+        font-family: monospace;
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+    .copy-button {
+        background-color: #417690;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        margin-right: 10px;
+    }
+    .copy-button:hover {
+        background-color: #2e5266;
+    }
+    .back-button {
+        background-color: #6c757d;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-block;
+    }
+    .back-button:hover {
+        background-color: #5a6268;
+        color: white;
+    }
+    .success-message {
+        display: none;
+        color: #28a745;
+        margin-left: 10px;
+        font-weight: bold;
+    }
+    .info-text {
+        color: #666;
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="copy-container">
+    <h1>{{ title }}</h1>
+    
+    <p class="info-text">Se han seleccionado {{ count }} pago{{ count|pluralize }}. Copie el texto a continuación:</p>
+    
+    <textarea id="copyText" class="copy-textarea" readonly>{{ formatted_text }}</textarea>
+    
+    <div>
+        <button type="button" class="copy-button" onclick="copyToClipboard()">
+            📋 Copiar al portapapeles
+        </button>
+        <a href="javascript:history.back()" class="back-button">← Volver</a>
+        <span id="successMessage" class="success-message">✓ Copiado!</span>
+    </div>
+</div>
+
+<script>
+function copyToClipboard() {
+    var copyText = document.getElementById("copyText");
+    copyText.select();
+    copyText.setSelectionRange(0, 99999); // For mobile devices
+    
+    // Use modern clipboard API if available
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(copyText.value).then(function() {
+            showSuccessMessage();
+        }).catch(function(err) {
+            // Fallback to old method
+            document.execCommand("copy");
+            showSuccessMessage();
+        });
+    } else {
+        // Fallback for older browsers
+        document.execCommand("copy");
+        showSuccessMessage();
+    }
+}
+
+function showSuccessMessage() {
+    var successMsg = document.getElementById("successMessage");
+    successMsg.style.display = "inline";
+    setTimeout(function() {
+        successMsg.style.display = "none";
+    }, 2000);
+}
+
+// Allow copying with Ctrl+A to select all
+document.getElementById("copyText").addEventListener('focus', function() {
+    this.select();
+});
+</script>
+{% endblock %}
+

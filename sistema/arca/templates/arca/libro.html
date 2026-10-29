@@ -1,0 +1,59 @@
+{% extends "sistema/base.html" %}
+{% load pesos %}
+{% block title %}Libro IVA Ventas{% endblock %}
+{% block migas %}<li><span aria-current="page">Libro IVA Ventas</span></li>{% endblock %}
+{% block titulo %}Libro IVA Ventas{% endblock %}
+{% block subtitulo %}Comprobantes emitidos por mes y por emisor.{% endblock %}
+{% block acciones %}
+{% if emisor and filas %}
+<c-boton icono="download" data-descarga href="{% url 'arca:libro_descargar' %}?emisor={{ emisor.pk }}&amp;mes={{ mes|date:'Y-m' }}&amp;formato=csv">Descargar CSV</c-boton>
+<c-boton icono="download" data-descarga href="{% url 'arca:libro_descargar' %}?emisor={{ emisor.pk }}&amp;mes={{ mes|date:'Y-m' }}&amp;formato=xlsx">Descargar Excel</c-boton>
+{% elif emisores %}
+<c-boton icono="download" tipo="button" deshabilitado="1">Descargar CSV</c-boton>
+<c-boton icono="download" tipo="button" deshabilitado="1">Descargar Excel</c-boton>
+{% endif %}
+{% endblock %}
+{% block content %}
+{% if emisores %}
+<div class="card2">
+  <form method="get" class="filtros p-4 md:p-6" role="search">
+    <div class="field !mb-0"><label for="f-emisor" class="lbl-f">Emisor</label>
+      <select class="select" id="f-emisor" name="emisor">
+        {% for e in emisores %}<option value="{{ e.pk }}"{% if e == emisor %} selected{% endif %}>{{ e.razon_social }} — {{ e.cuit }}</option>{% endfor %}
+      </select>
+      {% if error_emisor %}<p class="err-msg" id="f-emisor-error" role="alert"><c-icono nombre="circle-alert" clase="size-4" /><span>{{ error_emisor }}</span></p>{% endif %}</div>
+    <div class="field !mb-0"><label for="f-mes" class="lbl-f">Mes</label>
+      <input class="input" id="f-mes" type="month" name="mes" value="{{ mes|date:'Y-m' }}" max="{% now 'Y-m' %}"></div>
+    <c-boton variante="primario">Ver</c-boton>
+  </form>
+  {% if error_emisor %}
+  {% elif filas %}
+  <c-tabla titulo_accesible="Libro IVA Ventas de {{ emisor.razon_social }}">
+    <thead><tr>
+      <th scope="col">Fecha</th><th scope="col">Tipo</th><th scope="col" class="col-sec">Comprobante</th><th scope="col" class="col-sec">Receptor</th>
+      <th scope="col" class="col-sec col-monto">Neto</th><th scope="col" class="col-sec col-monto">IVA</th><th scope="col" class="col-monto">Total</th>
+    </tr></thead>
+    <tbody>
+      {% for f in filas %}
+      <tr>
+        <td class="tabular-nums whitespace-nowrap">{{ f.0|date:"d/m/Y" }}</td>
+        <td class="whitespace-nowrap">{{ f.1 }}<span class="sub-movil tabular-nums">{{ f.2|stringformat:"05d" }}-{{ f.3|stringformat:"08d" }}</span></td>
+        <td class="col-sec tabular-nums">{{ f.2|stringformat:"05d" }}-{{ f.3|stringformat:"08d" }}<small class="block text-xs text-ink-3">CAE {{ f.9 }}</small></td>
+        <td class="col-sec">{{ f.4 }}<small class="block text-xs text-ink-3 tabular-nums">{{ f.5 }}</small></td>
+        <td class="col-sec col-monto">{{ f.6|pesos }}</td><td class="col-sec col-monto">{{ f.7|pesos }}</td><td class="col-monto">{{ f.8|pesos }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot><tr class="font-semibold">
+      <td colspan="2">Totales</td><td class="col-sec"></td><td class="col-sec"></td>
+      <td class="col-sec col-monto">{{ totales.0|pesos }}</td><td class="col-sec col-monto">{{ totales.1|pesos }}</td><td class="col-monto">{{ totales.2|pesos }}</td>
+    </tr></tfoot>
+  </c-tabla>
+  {% else %}
+  <c-vacio icono="book-open" texto="No hay comprobantes en el mes." />
+  {% endif %}
+</div>
+{% else %}
+<c-tarjeta><c-vacio icono="landmark" texto="Todavía no hay emisores." /></c-tarjeta>
+{% endif %}
+{% endblock %}

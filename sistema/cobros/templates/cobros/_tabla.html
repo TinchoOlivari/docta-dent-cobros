@@ -1,0 +1,60 @@
+{% load pesos ui %}
+{% if parcial %}{% include "cobros/_limpiar.html" with oob=True %}{% if es_admin %}{% include "cobros/_exportar.html" %}{% endif %}{% endif %}
+<input type="hidden" name="orden" value="{{ orden }}" form="filtros-cobros">
+<span id="cargando-tabla" class="htmx-indicator absolute right-4 top-1 z-10 text-sm text-ink-3" role="status">Cargando…</span>
+{% if pagina %}
+<div class="max-sm:hidden">
+<c-tabla compacta titulo_accesible="Cobros">
+  {% if es_admin %}
+  <thead><tr>
+    <th scope="col" class="!pr-0 !pl-3"><c-elegir-todos form="elegidos" /></th>
+    {% include "cobros/_th.html" with campo="numero" titulo="N°" clase="text-center" %}
+    {% include "cobros/_th.html" with campo="monto" titulo="Monto" clase="tabular-nums" %}
+    <th scope="col" class="max-xl:hidden">Método</th>
+    {% include "cobros/_th.html" with campo="paciente" titulo="Paciente" clase="" %}
+    <th scope="col" class="max-xl:hidden">Profesional</th>
+    {% include "cobros/_th.html" with campo="destinatario" titulo="Destinatario" clase="max-lg:hidden" %}
+    {% include "cobros/_th.html" with campo="creador" titulo="Creado por" clase="max-xl:hidden" %}
+    <th scope="col" class="max-xl:hidden"><c-icono nombre="paperclip" /><span class="sr-only">Comprobante</span></th>
+    {% include "cobros/_th.html" with campo="fecha" titulo="Fecha" clase="max-md:hidden" %}
+    {% include "cobros/_th.html" with campo="revisado" titulo="Revisado" clase="!px-0" %}
+  </tr></thead>
+  {% else %}
+  <thead><tr>
+    <th scope="col" class="col-sec max-lg:hidden">N°</th>
+    {% include "cobros/_th.html" with campo="fecha" titulo="Fecha" clase="col-sec" %}
+    {% include "cobros/_th.html" with campo="paciente" titulo="Paciente" clase="" %}
+    <th scope="col" class="col-sec max-lg:hidden">Cuenta</th>
+    {% include "cobros/_th.html" with campo="estado" titulo="Estado" clase="" %}
+    {% include "cobros/_th.html" with campo="monto" titulo="Monto" clase="col-monto" %}
+    {% if pendientes_operador %}<th scope="col">Antigüedad</th>{% endif %}
+  </tr></thead>
+  {% endif %}
+  <tbody>
+    {% for c in pagina %}{% include "cobros/_fila.html" %}{% endfor %}
+  </tbody>
+</c-tabla>
+</div>
+{% if es_admin %}<div class="px-4 py-1 sm:hidden"><c-elegir-todos form="elegidos" texto="Elegir todos" /></div>{% endif %}
+<ul data-tarjetas class="m-0 flex list-none flex-col gap-2 p-0 sm:hidden" aria-label="Cobros">
+  {% for c in pagina %}
+  <li class="rounded-box border border-line p-3{% if es_admin and c.revisado %} fila-revisada{% endif %}"{% if es_admin %} data-estado="{{ c.estado }}" data-monto-centavos="{{ c.monto_centavos }}"{% endif %}>
+    <div class="flex items-start gap-2">
+      {% if es_admin %}<label class="celda-casilla shrink-0"><input type="checkbox" name="pk" value="{{ c.pk }}" form="elegidos" aria-label="Elegir cobro {{ c.pk }}"{% if c.pk in elegidos %} checked{% endif %}></label>{% include "cobros/_estado.html" %}{% endif %}
+      <a class="link text-brand-ink flex min-h-[44px] min-w-0 flex-1 items-center" href="{% url 'cobros:detalle' c.pk %}"{% if not c.nombre_paciente %} aria-label="Cobro N.º {{ c.pk }}"{% endif %}><span class="line-clamp-2 break-words">{{ c.nombre_paciente|default:"Cobro N.º" }}{% if not c.nombre_paciente %} {{ c.pk }}{% endif %}</span></a>
+      <span class="shrink-0 whitespace-nowrap font-medium tabular-nums">{{ c.monto|monto_corto }}</span>
+    </div>
+    <div class="mt-1 flex flex-wrap items-center gap-x-3 text-sm text-ink-3">
+      <span class="whitespace-nowrap tabular-nums">{{ c.fecha_alta|date:"H:i d/m/Y" }}</span>
+      {% if es_admin %}{% if c.destinatario %}<span class="min-w-0 truncate">{{ c.destinatario.nombre }}</span>{% endif %}<span class="inline-flex items-center gap-1">{% include "cobros/_metodo_icono.html" %}{{ c.get_metodo_display }}</span>
+      {% else %}{% badge c.estado c.get_estado_display %}{% if c.metodo == "transferencia" and c.cuenta %}<span class="min-w-0 truncate">{{ c.cuenta }}</span>{% endif %}{% endif %}
+    </div>
+    {% if es_admin %}<div class="mt-1">{% include "cobros/_revisado.html" with pref="m" htmx=False %}</div>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% if es_admin %}<div class="flex items-center gap-1 border-t border-line px-4 py-1 text-sm font-medium tabular-nums sm:px-6"><span>Subtotal sin cancelados: {{ subtotal|pesos }}</span></div>{% endif %}
+<c-paginacion :pagina="pagina" :query="query" hx_target="#tabla-cobros" nombre="cobros" />
+{% else %}
+<c-vacio texto="Todavía no hay cobros." :filtrado="hay_filtros" limpiar="{% url 'cobros:lista' %}" />
+{% endif %}

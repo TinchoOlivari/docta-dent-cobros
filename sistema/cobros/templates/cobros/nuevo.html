@@ -1,0 +1,454 @@
+{% extends "sistema/base.html" %}
+{% load pesos ui %}
+{% block title %}Nuevo cobro{% endblock %}
+{% block migas %}<li><a href="{% url 'dentalink:pacientes' %}">Buscar paciente</a></li><li><span aria-current="page">Nuevo cobro</span></li>{% endblock %}
+{% block titulo %}Nuevo cobro{% endblock %}
+{% block subtitulo %}{% if sin_dentalink %}Sin conectar con Dentalink.{% endif %}{% endblock %}
+{% block content %}
+{% if caido %}
+<div class="max-w-3xl space-y-4">
+  <c-alerta nivel="warning" titulo="Dentalink no está disponible.">No se pueden traer las prestaciones del paciente.</c-alerta>
+  <c-boton href="{% url 'cobros:nuevo' %}?sin_dentalink=1" variante="primario" bloque="1">Cobrar sin conectar con Dentalink</c-boton>
+  <c-boton href="{% url 'dentalink:pacientes' %}" variante="secundario" bloque="1">Buscar otro paciente</c-boton>
+</div>
+{% else %}
+{% with m=form.metodo.value %}
+<form method="post" enctype="multipart/form-data" class="space-y-4" id="cobro-form" x-data="segunMetodo('[name=metodo]')" data-sin-foco{% if asignado %} action="{% url 'cobros:registrar_transferencia' cobro.pk %}" data-asignado{% endif %}>
+  {% csrf_token %}
+  {% if asignado %}<input type="hidden" name="estado_visto" value="{{ cobro.estado }}">{% endif %}
+  {% if form.non_field_errors %}
+  <c-alerta nivel="error" titulo="No se pudo guardar el cobro.">{% for e in form.non_field_errors %}{{ e }} {% endfor %}</c-alerta>
+  {% endif %}
+
+  <section class="card2" aria-label="Paciente">
+    <div class="bd2">
+    {% if sin_dentalink and not asignado %}
+      <div class="grid gap-4 sm:grid-cols-2">
+        <c-campo :campo="form.nombre_paciente" />
+        <c-campo :campo="form.monto" monto="1" />
+      </div>
+    {% else %}
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <p class="text-lg font-bold">{% if nombre_paciente %}{{ nombre_paciente }}{% else %}Paciente N.º {{ id_paciente }}{% endif %}</p>
+          {% if not sin_dentalink %}
+          <span class="text-sm text-ink-2">{% if dni_paciente %}DNI {{ dni_paciente }}{% else %}Sin DNI{% endif %}</span>
+          {% if nacimiento_paciente %}<span class="text-sm text-ink-2">Nac. {{ nacimiento_paciente|date:"d/m/Y" }}</span>{% endif %}
+          <span class="text-sm text-ink-2">Dentalink ID {{ id_paciente }}</span>
+          {% endif %}
+        </div>
+        {% if asignado %}
+        <span class="btn btn-secundario pointer-events-none opacity-50" aria-disabled="true"><c-icono nombre="search" clase="size-5" /><span>Cambiar</span></span>
+        {% else %}
+        <c-boton href="{% url 'dentalink:pacientes' %}" variante="secundario" icono="search">Cambiar</c-boton>
+        {% endif %}
+      </div>
+    {% endif %}
+    </div>
+  </section>
+
+  {% if not sin_dentalink %}
+  <section class="card2" aria-labelledby="h-items">
+    <div class="hd"><h2 id="h-items">Tratamientos y prestaciones</h2></div>
+    <div class="bd2">
+      {% if asignado and not form.filas %}
+      <ul class="m-0 list-none divide-y divide-line p-0">
+        {% for i in items %}
+        <li class="flex min-h-[52px] items-center justify-between gap-4"><span>{% if i.nombre_tratamiento %}{{ i.nombre_tratamiento }} · {% endif %}{{ i.nombre_prestacion|default:"Saldo a favor" }}</span><span class="font-semibold tabular-nums">{{ i.monto|pesos }}</span></li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      {% include "cobros/_arbol.html" with id="filas-cobro" bloqueado=asignado %}
+      {% endif %}
+      <p id="error-total" class="err-msg" role="alert" hidden></p>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="card2" aria-labelledby="h-metodo">
+    <div class="bd2 flex flex-wrap gap-6">
+      <div class="field min-w-0 flex-[1_1_380px]">
+        <h2 id="h-metodo" class="mb-3 text-lg font-semibold">Método de cobro</h2>
+        <fieldset role="radiogroup"{% if form.metodo.errors %} aria-invalid="true" aria-describedby="id_metodo-error"{% endif %}>
+          <legend class="sr-only">Método de cobro</legend>
+          <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {% for radio in form.metodo %}
+            <label class="metodo-tile" for="{{ radio.id_for_label }}">
+              {{ radio.tag }}
+              {% with v=radio.data.value %}{% if v == "efectivo" %}<c-icono nombre="banknote" />{% elif v == "transferencia" %}<c-icono nombre="arrow-right-left" />{% elif v == "debito" %}<c-icono nombre="credit-card" />{% elif v == "credito" %}<c-icono nombre="wallet-cards" />{% elif v == "qr" %}<c-icono nombre="qr-code" />{% else %}<c-icono nombre="link" />{% endif %}{% endwith %}
+              <span>{{ radio.choice_label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+        {% if form.metodo.errors %}
+        <p id="id_metodo-error" class="err-msg" role="alert"><c-icono nombre="circle-alert" clase="size-4" /><span>{{ form.metodo.errors|join:" " }}</span></p>
+        {% endif %}
+      </div>
+
+      <div class="caja-metodo min-w-0 flex-[2_1_560px]" aria-live="polite">
+        {% if asignado %}
+        {# 024/FR-016: la cuenta asignada y el comprobante #}
+        <div class="grid w-full gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
+          <div class="space-y-3">
+            <div class="flex flex-wrap items-baseline justify-between gap-3">
+              <span class="inline-flex items-center gap-2 text-sm font-semibold text-success"><c-icono nombre="check" clase="size-4" />Destinatario asignado</span>
+              <span class="text-sm text-ink-2">Transferir <span class="ml-1 text-2xl font-bold text-ink tabular-nums">{{ cobro.monto|pesos }}</span></span>
+            </div>
+            {% if cobro.cuenta.titular %}<div><small class="block text-ink-3">Titular</small><span class="font-semibold">{{ cobro.cuenta.titular }}</span></div>{% endif %}
+            {% if cobro.cuenta.alias %}
+            <div class="copyrow"><div class="min-w-0"><small class="block text-ink-3">Alias</small><code class="break-all text-lg font-semibold">{{ cobro.cuenta.alias }}</code></div><button type="button" class="btn btn-secundario" data-copiar="{{ cobro.cuenta.alias }}">Copiar</button></div>
+            {% endif %}
+            {% if cobro.cuenta.cbu %}
+            <div class="copyrow"><div class="min-w-0"><small class="block text-ink-3">CBU o CVU</small><code class="break-all text-lg font-semibold">{{ cobro.cuenta.cbu|cbu }}</code></div><button type="button" class="btn btn-secundario" data-copiar="{{ cobro.cuenta.cbu }}">Copiar</button></div>
+            {% endif %}
+            {# djlint:off H023 #}
+            <button type="button" class="btn btn-secundario" data-copiar="{% for l in lineas_cuenta %}{{ l }}{% if not forloop.last %}&#10;{% endif %}{% endfor %}">Copiar todo</button>
+            {# djlint:on #}
+          </div>
+          <div class="field">
+            <c-comprobantes :campo="form.comprobante" />
+            {% if error_comprobante %}<p id="id_comprobante-error" class="err-msg" role="alert"><c-icono nombre="circle-alert" clase="size-4" /><span>{{ error_comprobante }}</span></p>{% endif %}
+          </div>
+        </div>
+        {% else %}
+        <p class="m-auto text-sm text-ink-3" x-show="metodo === 'efectivo'"{% if m != "efectivo" %} style="display:none"{% endif %}>Sin datos adicionales</p>
+
+        <div class="m-auto flex flex-col items-center gap-3 text-center" x-show="metodo === 'transferencia'"{% if m != "transferencia" %} style="display:none"{% endif %}>
+          {% if sin_cupo %}
+          <p role="alert" class="m-0 inline-flex items-center gap-2 font-semibold text-warning"><c-icono nombre="triangle-alert" />No hay destinatario con cupo para {{ sin_cupo|pesos }}.</p>
+          <p class="m-0 text-sm text-ink-2">El cobro no se guardó.</p>
+          <c-boton variante="secundario" icono="rotate-ccw" data-buscar="1">Buscar de nuevo</c-boton>
+          {% else %}
+          <c-boton variante="primario" icono="search" data-buscar="1">Buscar destinatario</c-boton>
+          {% endif %}
+        </div>
+
+        <fieldset id="bloque-pos" class="w-full" x-show="['debito','credito','qr','link'].includes(metodo)" {% if m != "debito" and m != "credito" and m != "qr" and m != "link" %}style="display:none"{% endif %}>
+          <legend class="sr-only">Datos del cobro con terminal</legend>
+          <div class="grid gap-x-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_240px]">
+            <div class="field">
+              <label for="id_terminal" class="lbl-f">Terminal</label>
+              <select name="terminal" id="id_terminal" class="select w-full"{% if form.terminal.errors %} aria-invalid="true" aria-describedby="id_terminal-error"{% endif %}>
+                <option value="">Elegí una terminal</option>
+                {% for t, metodos in form.terminales %}
+                <option value="{{ t.pk }}" data-metodos="{{ metodos }}"{% if form.terminal.value|stringformat:"s" == t.pk|stringformat:"s" %} selected{% endif %}>{{ t.nombre }}</option>
+                {% endfor %}
+              </select>
+              {% if form.terminal.errors %}<p id="id_terminal-error" class="err-msg" role="alert"><c-icono nombre="circle-alert" clase="size-4" /><span>{{ form.terminal.errors|join:" " }}</span></p>{% endif %}
+              {% for s in sin_terminal %}
+              <p class="err-msg" x-show="metodo === '{{ s }}'" {% if m != s %}style="display:none"{% endif %}><c-icono nombre="circle-alert" clase="size-4" /><span>No hay terminal con sesión abierta para este método. Avisá a un administrador.</span></p>
+              {% endfor %}
+            </div>
+            <c-campo :campo="form.numero_operacion" />
+            <div class="lg:row-span-3">
+              <c-comprobantes :campo="form.comprobante" />
+            </div>
+            <div>
+              <c-campo :campo="form.monto_neto" monto="1" />
+              <p class="hint -mt-2 mb-3" data-comision hidden></p>
+            </div>
+            <div id="bloque-tarjeta" class="contents" x-show="['debito','credito'].includes(metodo)" {% if m != "debito" and m != "credito" %}style="display:none"{% endif %}>
+              <c-campo :campo="form.banco_emisor" />
+              <div class="max-w-40"><c-campo :campo="form.ultimos_4" /></div>
+            </div>
+          </div>
+        </fieldset>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  {# 024/FR-011: barra fija #}
+  <div class="barra-cobro" role="region" aria-label="Resumen del cobro">
+    <div class="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-6 gap-y-1">
+      <span class="text-sm text-ink-2" data-resumen>{% if asignado %}Transferencia{% if cobro.cuenta.alias %} a {{ cobro.cuenta.alias }}{% endif %}{% endif %}</span>
+      <span class="text-sm text-ink-2" data-neto-barra hidden>Neto <strong class="font-semibold text-ink tabular-nums"></strong></span>
+      <span class="text-sm text-ink-2">Total a cobrar <span id="total" class="ml-1 text-2xl font-bold text-ink tabular-nums">{% if asignado %}{{ cobro.monto|pesos }}{% else %}$0,00{% endif %}</span></span>
+    </div>
+    <span class="inline-flex items-center gap-2 text-sm font-semibold text-error" data-errores hidden><c-icono nombre="circle-alert" clase="size-4" /><span data-texto></span></span>
+    {% if asignado %}
+    <span class="inline-flex items-center gap-2 text-sm font-semibold text-warning" data-falta-comprobante><c-icono nombre="circle-alert" clase="size-4" />Falta el comprobante</span>
+    <button type="button" class="btn btn-secundario text-error" data-abrir-empezar>Cancelar y empezar de nuevo</button>
+    <c-boton variante="primario" icono="check" id="guardar-cobro">Registrar cobro</c-boton>
+    {% else %}
+    <c-boton href="{% url 'cobros:lista' %}" variante="fantasma">Cancelar</c-boton>
+    <c-boton variante="primario" icono="check" id="guardar-cobro" :deshabilitado="guardar_deshabilitado" x-bind:disabled="metodo === 'transferencia'{% for s in sin_terminal %} || metodo === '{{ s }}'{% endfor %}">Registrar cobro</c-boton>
+    {% endif %}
+  </div>
+</form>
+{% endwith %}
+
+{% if asignado %}
+{# 024/FR-018: el motivo lo elige el usuario #}
+<dialog id="empezar-de-nuevo" class="modal" aria-labelledby="empezar-titulo"{% if cancelar_abierto %} data-abrir{% endif %}>
+  <div class="modal-box">
+    <h2 id="empezar-titulo" class="text-lg font-semibold">Cancelar y empezar de nuevo</h2>
+    <form method="post" action="{% url 'cobros:empezar_de_nuevo' cobro.pk %}" class="mt-3 space-y-3" id="form-empezar">
+      {% csrf_token %}
+      <input type="hidden" name="estado_visto" value="{{ cobro.estado }}">
+      <div class="field"><label for="empezar-motivo" class="lbl-f">Motivo</label>
+      <select class="select w-full" id="empezar-motivo" name="motivo" required data-nativo{% if cancelar_errores.motivo %} aria-invalid="true" aria-describedby="empezar-motivo-error"{% endif %}>
+        <option value=""{% if not cancelar_motivo %} selected{% endif %}>Elegí un motivo</option>
+        {% for valor, etiqueta in motivos %}<option value="{{ valor }}"{% if valor == cancelar_motivo %} selected{% endif %}>{{ etiqueta }}</option>{% endfor %}
+      </select>
+      {% if cancelar_errores.motivo %}<p id="empezar-motivo-error" class="err-msg" role="alert"><c-icono nombre="circle-alert" clase="size-4" /><span>{{ cancelar_errores.motivo }}</span></p>{% endif %}</div>
+      <div class="field"><label for="empezar-detalle" class="lbl-f">Detalle</label>
+      <textarea class="textarea w-full" id="empezar-detalle" name="detalle" rows="2" placeholder="Obligatorio con «Otro»"{% if cancelar_errores.detalle %} aria-invalid="true" aria-describedby="empezar-detalle-error"{% endif %}>{{ cancelar_detalle }}</textarea>
+      {% if cancelar_errores.detalle %}<p id="empezar-detalle-error" class="err-msg" role="alert"><c-icono nombre="circle-alert" clase="size-4" /><span>{{ cancelar_errores.detalle }}</span></p>{% endif %}</div>
+      <div class="modal-action flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <button type="button" class="btn btn-secundario" data-cerrar-empezar>Volver</button>
+        <c-boton variante="peligro" icono="circle-x">Cancelar el cobro</c-boton>
+      </div>
+    </form>
+  </div>
+</dialog>
+{% else %}
+<c-confirmar id="resumen-cobro" titulo="Revisá el cobro" texto="Controlá los datos antes de guardar." volver="Volver a editar" boton="Confirmar" variante="primario" />
+{% endif %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var form = document.getElementById("cobro-form");
+  var asignado = form.hasAttribute("data-asignado");
+  var terminal = document.getElementById("id_terminal");
+  var confirmado = false;
+  var POS = ["debito", "credito", "qr", "link"];
+  function metodoElegido() { return form.elements.metodo ? form.elements.metodo.value : ""; }
+
+  // Solo se ofrecen las terminales que aceptan el método elegido.
+  // `elegir` (solo al cambiar el método, no al cargar): 1 terminal que lo acepta se elige; 2 o más, ninguna (022/FR-004).
+  function actualizar(elegir) {
+    if (!terminal) return;
+    var m = metodoElegido();
+    var aceptan = [];
+    Array.prototype.forEach.call(terminal.options, function (o) {
+      if (!o.value) return;
+      var ok = o.dataset.metodos.split(" ").indexOf(m) >= 0;
+      o.hidden = o.disabled = !ok;
+      if (!ok && o.selected) terminal.value = "";
+      if (ok) aceptan.push(o);
+    });
+    if (elegir === true && aceptan.length) terminal.value = aceptan.length === 1 ? aceptan[0].value : "";
+    window.sincronizarSelect(terminal);  // Tom Select relee `disabled` y `value` (023/R1)
+    // 021/FR-001: los datos de la terminal son obligatorios según el método (los ocultos no se validan).
+    var pos = POS.indexOf(m) >= 0;
+    var tarjeta = m === "debito" || m === "credito";
+    ["id_terminal", "id_monto_neto", "id_numero_operacion", "id_comprobante"].forEach(function (id) {
+      document.getElementById(id).required = pos;
+    });
+    ["id_banco_emisor", "id_ultimos_4"].forEach(function (id) {
+      document.getElementById(id).required = tarjeta;
+    });
+  }
+
+  function textoMonto(c) { return "$" + window.montoDeCentavos(c); }
+  // Solo las prestaciones marcadas cuentan (023/FR-036).
+  function marcada(i) {
+    var c = document.getElementById(i.id.replace("id_monto_", "id_elegida_"));
+    return !!c && c.checked;
+  }
+  function entradasItems() {
+    return Array.prototype.filter.call(document.querySelectorAll("#filas-cobro input[name^=monto_]"), marcada);
+  }
+  // Centavos del monto de una prestación o null. Con `data-saldo`, un monto mayor es inválido (FR-002).
+  function centavosItem(i, conSaldo) {
+    var c = window.montoCentavos(i);
+    if (conSaldo && c !== null && i.dataset.saldo !== undefined && c > Number(i.dataset.saldo)) {
+      window.errorMonto(i, "Supera lo que falta abonar. Máximo " + textoMonto(Number(i.dataset.saldo)) + ".", "Monto excedido");
+      return null;
+    }
+    return c;
+  }
+  // Suma de los montos válidos; `validos` pasa a false si algún campo con texto no lo es.
+  function sumaCentavos(conSaldo) {
+    var suma = 0, validos = true;
+    entradasItems().forEach(function (i) {
+      if (!i.value.trim()) return;
+      var c = centavosItem(i, conSaldo);
+      if (c === null) validos = false; else suma += c;
+    });
+    return { suma: suma, validos: validos };
+  }
+  // Total para la barra: no marca errores (eso pasa al salir del campo, 024/FR-012).
+  function totalCentavos() {
+    var unico = document.getElementById("id_monto");
+    var entradas = unico ? [unico] : entradasItems();
+    var suma = 0;
+    entradas.forEach(function (i) {
+      if (!i.value.trim()) return;
+      var r = window.validarMonto(i.value, true);
+      if (!r.error) suma += r.centavos;
+    });
+    return suma;
+  }
+  function errorTotal(texto) {
+    var e = document.getElementById("error-total");
+    if (!e) return;
+    e.textContent = texto;
+    e.hidden = !texto;
+  }
+
+  // 024/FR-011: la barra fija, con la cantidad de campos con error (FR-005).
+  function barra() {
+    var errores = form.querySelectorAll("[aria-invalid=true]").length;
+    var aviso = form.querySelector("[data-errores]");
+    aviso.hidden = !errores;
+    aviso.querySelector("[data-texto]").textContent = errores === 1 ? "1 campo para revisar" : errores + " campos para revisar";
+    if (asignado) {
+      var archivo = document.getElementById("id_comprobante");
+      form.querySelector("[data-falta-comprobante]").hidden = !!(archivo && archivo.files.length);
+      return;
+    }
+    var total = totalCentavos();
+    document.getElementById("total").textContent = textoMonto(total);
+    var partes = [];
+    var n = entradasItems().length;
+    if (document.getElementById("filas-cobro")) partes.push(n === 1 ? "1 prestación" : n + " prestaciones");
+    var elegido = form.querySelector("[name=metodo]:checked");
+    if (elegido) partes.push(elegido.closest("label").textContent.trim());
+    form.querySelector("[data-resumen]").textContent = partes.join(" · ");
+    var netoCampo = document.getElementById("id_monto_neto");
+    var neto = netoCampo && netoCampo.value.trim() ? window.validarMonto(netoCampo.value, true) : null;
+    var hayNeto = POS.indexOf(metodoElegido()) >= 0 && !!neto && !neto.error;
+    var netoBarra = form.querySelector("[data-neto-barra]");
+    netoBarra.hidden = !hayNeto;
+    var comision = form.querySelector("[data-comision]");
+    if (comision) comision.hidden = !(hayNeto && total > 0);
+    if (hayNeto) {
+      netoBarra.querySelector("strong").textContent = textoMonto(neto.centavos);
+      if (total > 0) {
+        var dif = total - neto.centavos;  // 024/FR-011: comisión de la terminal
+        var pct = Math.round(dif * 1000 / total) / 10;
+        comision.textContent = "Comisión " + (dif < 0 ? "-" : "") + textoMonto(Math.abs(dif)) + " (" + String(pct).replace(".", ",") + " %)";
+      }
+    }
+  }
+
+  // Abre el tratamiento de un campo antes de llevarle el foco (024/FR-003).
+  function mostrar(el) {
+    var rama = el.closest("[data-rama]");
+    if (rama && window.Alpine) window.Alpine.$data(rama).abierto = true;
+  }
+
+  function linea(cuerpo, etiqueta, valor) {
+    var p = document.createElement("p");
+    var b = document.createElement("strong");
+    b.textContent = etiqueta + ": ";
+    p.appendChild(b);
+    p.appendChild(document.createTextNode(valor));
+    cuerpo.appendChild(p);
+  }
+  // Arma el diálogo con los mismos centavos que se envían. false si algo no es válido.
+  function resumen() {
+    // 021/FR-001: primero los campos obligatorios visibles; el error queda en cada campo.
+    var faltan = Array.prototype.filter.call(form.elements, function (c) {
+      return c.willValidate && c.type !== "hidden" && !c.checkValidity() && c.checkVisibility();
+    });
+    if (faltan.length) { form.reportValidity(); return false; }
+    var cuerpo = document.querySelector("#resumen-cobro [data-cuerpo]");
+    var nombre = document.getElementById("id_nombre_paciente");
+    var filas = [];
+    var metodo = metodoElegido();
+    if (nombre) {
+      var unico = window.montoCentavos(document.getElementById("id_monto"));
+      if (unico === null) return false;
+      filas.push(["Monto", textoMonto(unico)], ["Paciente", nombre.value]);
+    } else {
+      var s = sumaCentavos(true);
+      if (!s.validos) {
+        var malo = form.querySelector("#filas-cobro [aria-invalid=true]");
+        if (malo) { mostrar(malo); malo.focus(); }
+        return false;
+      }
+      var primero = entradasItems()[0];
+      if (!primero) {  // ninguna marcada: no abrir (023/FR-036)
+        errorTotal("Elegí al menos una prestación.");
+        var casilla = document.querySelector("#filas-cobro [data-marcar-rama]");
+        if (casilla) casilla.focus();
+        return false;
+      }
+      var vacio = entradasItems().filter(function (i) { return !i.value.trim(); })[0];
+      if (vacio) {  // marcada sin monto
+        window.errorMonto(vacio, "Escribí el monto de esta prestación.");
+        mostrar(vacio);
+        vacio.focus();
+        return false;
+      }
+      filas.push(["Monto", textoMonto(s.suma)]);
+      filas.push(["Paciente", "{% if nombre_paciente %}{{ nombre_paciente|escapejs }}{% else %}N.º {{ id_paciente|escapejs }}{% endif %}"]);
+    }
+    var elegido = form.querySelector("[name=metodo]:checked");
+    filas.push(["Método", elegido ? elegido.closest("label").textContent.trim() : ""]);
+    if (POS.indexOf(metodo) >= 0) {  // FR-001
+      var neto = window.montoCentavos(document.getElementById("id_monto_neto"));
+      if (neto === null) return false;
+      filas.push(["Terminal", terminal.options[terminal.selectedIndex].textContent.trim()]);
+      filas.push(["Monto neto", textoMonto(neto)]);
+      filas.push(["N.º de operación", document.getElementById("id_numero_operacion").value.trim()]);
+      if (metodo === "debito" || metodo === "credito") {
+        var banco = document.getElementById("id_banco_emisor");
+        filas.push(["Banco", banco.options[banco.selectedIndex].textContent.trim()]);
+        filas.push(["Últimos 4 dígitos", document.getElementById("id_ultimos_4").value.trim()]);
+      }
+    }
+    var items = 0;
+    entradasItems().forEach(function (i) {
+      if (!i.value.trim()) return;
+      items++;
+      var fila = i.closest("[data-fila]");
+      var p = fila ? fila.querySelector("[data-prestacion]") : null;
+      filas.push(["Ítem " + items, (p ? p.textContent : "") + " — " + textoMonto(window.montoCentavos(i))]);
+    });
+    cuerpo.textContent = "";
+    filas.forEach(function (f) {
+      linea(cuerpo, f[0], f[1]);
+      if (f[0] === "Monto" && metodo === "efectivo") {  // FR-003
+        var nota = document.createElement("p");
+        nota.textContent = "El cobro en efectivo queda Finalizado al confirmar.";
+        cuerpo.appendChild(nota);
+      }
+    });
+    return true;
+  }
+
+  if (asignado) {
+    // 024/FR-018: el diálogo del motivo.
+    var dialogo = document.getElementById("empezar-de-nuevo");
+    document.querySelector("[data-abrir-empezar]").addEventListener("click", function () { dialogo.showModal(); });
+    dialogo.querySelector("[data-cerrar-empezar]").addEventListener("click", function () { dialogo.close(); });
+    if (dialogo.hasAttribute("data-abrir")) dialogo.showModal();
+    form.addEventListener("change", barra);
+    barra();
+    return;
+  }
+
+  form.querySelectorAll("[name=metodo]").forEach(function (r) { r.addEventListener("change", function () { actualizar(true); barra(); }); });
+  form.addEventListener("input", function () { errorTotal(""); barra(); });
+  form.addEventListener("change", barra);
+  // 024/FR-012: al salir del campo, el monto de una prestación contra su saldo (FR-002).
+  form.addEventListener("focusout", function (e) {
+    if (e.target.matches && e.target.matches("#filas-cobro input[name^=monto_]") && e.target.value.trim()) centavosItem(e.target, true);
+    setTimeout(barra, 0);
+  });
+  // Se registra antes que bloquearEnvio (app.js): corta la cadena hasta confirmar.
+  form.addEventListener("submit", function (e) {
+    if (confirmado || !document.getElementById("resumen-cobro").showModal) return;
+    var unico = document.getElementById("id_monto");
+    if (unico && !unico.value.trim()) return;  // monto vacío: el servidor muestra el error
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    if (!resumen()) { barra(); return; }  // un monto inválido muestra su error y el diálogo no abre (FR-002)
+    window.abrirConfirmar("resumen-cobro", function () {
+      confirmado = true;
+      var buscar = form.querySelector("[data-buscar] span");
+      if (metodoElegido() === "transferencia" && buscar) buscar.textContent = "Buscando destinatario…";  // 024/FR-014
+      form.requestSubmit();
+    });
+  });
+  actualizar();
+  barra();
+});
+</script>
+{% endif %}
+{% endblock %}

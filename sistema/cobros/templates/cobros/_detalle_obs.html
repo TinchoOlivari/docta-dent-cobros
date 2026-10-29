@@ -1,0 +1,22 @@
+{% load pesos ui %}
+  <section class="card2" aria-labelledby="h-obs">
+    <div class="hd">
+      <h2 id="h-obs">Observaciones</h2>
+      <c-ayuda lado="fin" tema="Observaciones" texto="Nota interna del cobro. No va a Dentalink ni a la factura. Cada cambio queda en el historial." />
+    </div>
+    <div class="bd2">
+      {% if puede_observar %}
+      <form id="obs-form" data-sin-foco method="post" action="{% url 'cobros:observaciones' cobro.pk %}" class="space-y-3">
+        {% csrf_token %}
+        <label for="obs-texto" class="sr-only">Observaciones</label>
+        <div x-data="{ n: {{ cobro.observaciones|length }} }" x-on:input="n = $event.target.value.length">
+        <textarea id="obs-texto" name="observaciones" class="textarea" rows="3" aria-describedby="obs-contador">{{ cobro.observaciones }}</textarea>
+        <p id="obs-contador" data-contador class="hint tabular-nums"><span x-text="n.toLocaleString('es-AR')">{{ cobro.observaciones|length }}</span>/1.000</p>
+        </div>
+        <div class="flex justify-end"><c-boton variante="secundario" icono="check">Guardar observaciones</c-boton></div>
+      </form>
+      {% elif cobro.observaciones %}<p class="whitespace-pre-line">{{ cobro.observaciones }}</p>
+      {% else %}<p class="text-ink-3">Sin observaciones.</p>{% endif %}
+    </div>
+  </section>
+

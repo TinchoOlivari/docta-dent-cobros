@@ -1,0 +1,7 @@
+-r requirements.txt
+
+ruff==0.9.10
+django-debug-toolbar==8.0.0
+django-browser-reload==1.21.0
+djlint==1.46.6
+playwright==1.64.0

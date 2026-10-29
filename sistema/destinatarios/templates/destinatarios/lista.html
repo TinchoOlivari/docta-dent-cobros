@@ -1,0 +1,61 @@
+{% extends "sistema/base.html" %}
+{% load pesos ui %}
+{% block title %}{% if archivados %}Destinatarios archivados{% else %}Destinatarios{% endif %}{% endblock %}
+{% block migas %}{% if archivados %}<li><a href="{% url 'destinatarios:lista' %}">Destinatarios</a></li><li aria-current="page">Archivados</li>{% else %}<li aria-current="page">Destinatarios</li>{% endif %}{% endblock %}
+{% block titulo %}{% if archivados %}Destinatarios archivados{% else %}Destinatarios{% endif %}{% endblock %}
+{% block subtitulo %}Quién recibe los cobros y qué cuentas tiene.{% endblock %}
+{% block acciones %}
+  {% if archivados %}<c-boton variante="secundario" href="{% url 'destinatarios:lista' %}">Ver activos e inactivos</c-boton>{% else %}<c-boton variante="secundario" href="?archivados=1">Ver archivados</c-boton>{% endif %}
+  <c-boton variante="primario" href="{% url 'destinatarios:nuevo' %}" icono="plus">Nuevo destinatario</c-boton>
+{% endblock %}
+{% block content %}
+<div class="flex flex-col gap-4" x-data="seleccion">
+  <form method="get" class="flex flex-col gap-3 sm:flex-row sm:items-end" aria-label="Filtros" data-sin-foco>
+    {% if archivados %}<input type="hidden" name="archivados" value="1">{% endif %}
+    <div class="sm:flex-1">
+      <label for="f-q" class="sr-only">Buscar por nombre, alias o CBU</label>
+      <input class="input" type="search" id="f-q" name="q" value="{{ q }}" placeholder="Buscar por nombre o alias" autocomplete="off">
+    </div>
+    <select name="tipo" aria-label="Tipo" class="select sm:w-auto sm:max-w-[220px]">
+      <option value="">Todos los tipos</option>
+      {% for valor, etiqueta in tipos %}<option value="{{ valor }}" {% if request.GET.tipo == valor %}selected{% endif %}>{{ etiqueta }}</option>{% endfor %}
+    </select>
+    <select name="estado" aria-label="Estado" class="select sm:w-auto sm:max-w-[220px]">
+      <option value="">Todos los estados</option>
+      {% for valor, etiqueta in estados %}<option value="{{ valor }}" {% if request.GET.estado == valor %}selected{% endif %}>{{ etiqueta }}</option>{% endfor %}
+    </select>
+    <c-boton variante="secundario" icono="search">Filtrar</c-boton>
+  </form>
+  <section class="card2">
+    {% if not archivados %}
+    <c-elegidos id="elegidos-destinatarios" action="{% url 'destinatarios:estado_lote' %}">
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <c-boton variante="secundario" nombre="estado" valor="activo">Activar elegidos</c-boton>
+      <c-boton variante="secundario" nombre="estado" valor="inactivo" x-on:click.prevent="(function (b) { abrirConfirmar('confirmar-desactivar-lote', function () { b.form.requestSubmit(b); }); })($el)">Desactivar elegidos</c-boton>
+      <c-boton variante="secundario" nombre="estado" valor="archivado" x-on:click.prevent="(function (b) { abrirConfirmar('confirmar-archivar-lote', function () { b.form.requestSubmit(b); }); })($el)">Archivar elegidos</c-boton>
+    </c-elegidos>
+    {% endif %}
+    <c-tabla titulo_accesible="Destinatarios">
+      <thead><tr>{% if not archivados %}<th><c-elegir-todos form="elegidos-destinatarios" /></th>{% endif %}<th>Nombre</th><th class="col-sec max-lg:hidden">Tipo</th><th>Estado</th><th class="col-monto col-sec max-lg:hidden">Tope mensual</th><th class="col-monto col-sec max-lg:hidden">Recibido</th><th class="col-monto col-sec max-lg:hidden">Consumido</th><th class="col-monto">Restante</th></tr></thead>
+      <tbody>
+        {% for d in destinatarios %}
+        <tr>
+          {% if not archivados %}<td class="!px-0"><label class="celda-casilla"><input type="checkbox" name="pk" value="{{ d.pk }}" form="elegidos-destinatarios" aria-label="Elegir {{ d.nombre }}"></label></td>{% endif %}
+          <td><a class="font-medium text-brand-ink underline" href="{% url 'destinatarios:detalle' d.pk %}">{{ d.nombre }}</a><span class="sub-movil">{{ d.get_tipo_display }}</span></td>
+          <td class="col-sec max-lg:hidden">{{ d.get_tipo_display }}</td>
+          <td>{% badge d.estado d.get_estado_display %}</td>
+          <td class="col-monto col-sec max-lg:hidden whitespace-nowrap">{% if d.cupo %}{{ d.cupo.tope|pesos }}{% else %}—{% endif %}</td>
+          <td class="col-monto col-sec max-lg:hidden whitespace-nowrap">{% if d.cupo %}{{ d.cupo.recibido|pesos }}{% else %}—{% endif %}</td>
+          <td class="col-monto col-sec max-lg:hidden whitespace-nowrap">{% if d.cupo %}{{ d.cupo.consumido|pesos }}{% else %}—{% endif %}</td>
+          <td class="col-monto whitespace-nowrap">{% if d.cupo %}{{ d.cupo.restante|pesos }}{% if d.cupo.excedente %}<span class="block text-sm text-ink-3">Excedente {{ d.cupo.excedente|pesos }}</span>{% endif %}{% else %}—{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8">{% if q or request.GET.tipo or request.GET.estado %}<c-vacio filtrado="1" limpiar="{% if archivados %}?archivados=1{% else %}{% url 'destinatarios:lista' %}{% endif %}" />{% elif archivados %}<c-vacio texto="Todavía no hay destinatarios archivados." />{% else %}<c-vacio texto="Todavía no hay destinatarios."><c-slot name="accion"><c-boton variante="primario" href="{% url 'destinatarios:nuevo' %}" icono="plus">Nuevo destinatario</c-boton></c-slot></c-vacio>{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </c-tabla>
+  </section>
+  {% if not archivados %}<c-confirmar id="confirmar-archivar-lote" titulo="Archivar destinatarios" texto="Los destinatarios elegidos dejan de verse en listas y filtros. Sus cuentas no cambian. Los que tienen una sesión abierta en una terminal se omiten." boton="Archivar" />
+  <c-confirmar id="confirmar-desactivar-lote" titulo="Desactivar destinatarios" texto="Los destinatarios elegidos y sus cuentas dejan de recibir cobros. Los que tienen una sesión abierta en una terminal se omiten." boton="Desactivar" />{% endif %}
+</div>
+{% endblock %}

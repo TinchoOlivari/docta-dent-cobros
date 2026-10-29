@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Docta Dent - Pago con QR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <link rel="shortcut icon" type="image/png"
+        href="https://doctadent.com.ar/wp-content/uploads/2021/04/ico-Docta-Dent-150x150.png">
+
+</head>
+
+<style>
+    input:-webkit-autofill {
+        box-shadow: 0 0 0 1000px #263129 inset !important;
+        -webkit-text-fill-color: #EEF3ED !important;
+    }
+
+    body {
+        background-color: #18201C;
+        color: #EEF3ED;
+    }
+
+    .bg-dd-page { background-color: #18201C; }
+    .bg-dd-surface { background-color: #202A24; }
+    .bg-dd-elevated { background-color: #2B372F; }
+    .bg-dd-inset { background-color: #263129; }
+    .bg-dd-brand { background-color: #A4D468; }
+    .bg-dd-error-bg { background-color: #3A2426; }
+    .bg-dd-success-bg { background-color: #243426; }
+    .text-dd-primary { color: #EEF3ED; }
+    .text-dd-secondary { color: #C2CEC4; }
+    .text-dd-muted { color: #A6B3A9; }
+    .text-dd-brand { color: #A4D468; }
+    .text-dd-page { color: #18201C; }
+    .text-dd-error { color: #F2A6A6; }
+    .text-dd-success { color: #B8E3B2; }
+    .border-dd-border { border-color: #3B4A40; }
+    .border-dd-brand { border-color: #A4D468; }
+    .border-dd-error { border-color: #7C3A3A; }
+    .border-dd-success { border-color: #4F704D; }
+    .hover\:bg-dd-elevated:hover { background-color: #334238; }
+    .hover\:bg-dd-brand-active:hover { background-color: #78A842; }
+    .hover\:border-dd-brand:hover { border-color: #A4D468; }
+    .hover\:text-dd-brand:hover { color: #A4D468; }
+    .hover\:text-dd-secondary:hover { color: #C2CEC4; }
+    .hover\:text-dd-error:hover { color: #F2A6A6; }
+    .group:hover .group-hover\:text-dd-brand { color: #A4D468; }
+    .group:hover .group-hover\:text-dd-secondary { color: #C2CEC4; }
+    .focus\:border-dd-brand:focus { border-color: #A4D468; }
+    .focus\:ring-dd-brand:focus,
+    .focus\:ring-dd-brand-active:focus { --tw-ring-color: #A4D468; }
+    .disabled\:bg-dd-elevated:disabled { background-color: #2B372F; }
+    .disabled\:text-dd-muted:disabled { color: #A6B3A9; }
+
+    input,
+    textarea,
+    select {
+        color: #EEF3ED;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        color: #A6B3A9;
+    }
+
+    select option {
+        background-color: #263129;
+        color: #EEF3ED;
+    }
+
+    /* Hide arrows in Chrome, Safari, Edge */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input {
+        all: unset;
+        box-sizing: border-box;
+    }
+
+    /* Safari-friendly placeholder color to match "$" (#D1D5DB) */
+    .money-input::placeholder {
+        color: rgba(209, 213, 219, 1);
+    }
+
+    .money-input::-webkit-input-placeholder {
+        color: rgba(209, 213, 219, 1);
+    }
+
+    .money-input:-ms-input-placeholder {
+        color: rgba(209, 213, 219, 1);
+    }
+
+    .money-input::-moz-placeholder {
+        color: rgba(209, 213, 219, 1);
+        opacity: 1;
+    }
+
+    .money-input:-moz-placeholder {
+        color: rgba(209, 213, 219, 1);
+    }
+
+    /* Subtle fade animations */
+    @keyframes fade-in-soft {
+        from {
+            opacity: 0;
+            transform: translateY(6px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fade-out-soft {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        to {
+            opacity: 0;
+            transform: translateY(6px);
+        }
+    }
+
+    .animate-fade-in {
+        animation: fade-in-soft 320ms ease-out both;
+    }
+
+    .animate-fade-out {
+        animation: fade-out-soft 200ms ease-in both;
+    }
+</style>
+
+
+<body class="bg-dd-page min-h-screen text-dd-primary">
+    {% include "payment_instructions/_staging_banner.html" %}
+    {% url 'payment_instructions:operator_dashboard' as dashboard_url %}
+    {% include "payment_instructions/_operator_nav.html" with title="Pagos con QR" back_url=dashboard_url %}
+
+    <div class="max-w-2xl mx-auto pt-4 pb-24 px-4 sm:py-6 sm:px-6">
+        <div data-animate="fade-in"
+            class="bg-dd-surface overflow-hidden shadow-lg rounded-lg opacity-0 p-4 sm:p-6 space-y-4">
+            <div>
+                <h3 class="text-lg sm:text-xl leading-6 font-medium text-dd-primary mb-3 sm:mb-6">
+                    Datos del pago con QR
+                </h3>
+
+                <!-- Amount Inputs -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <h4 class="text-xs sm:text-sm font-medium text-dd-primary mb-1">Monto cobrado: <span class="text-dd-error" aria-hidden="true">*</span></h4>
+                        <div class="mt-1 relative rounded-md">
+                            <div class="absolute inset-y-0 left-0 pl-1 sm:pl-3 flex items-center pointer-events-none">
+                                <span class="text-dd-muted text-xl sm:text-2xl">$</span>
+                            </div>
+                            <input type="text" id="montoCobrado" inputmode="numeric" required aria-required="true"
+                                class="money-input block w-full pl-6 sm:pl-9 pr-2 rounded-md text-xl sm:text-2xl bg-dd-inset border border-dd-border py-2"
+                                placeholder="0" autocomplete="off">
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-xs sm:text-sm font-medium text-dd-primary mb-1">Monto recibido: <span class="text-dd-error" aria-hidden="true">*</span></h4>
+                        <div class="mt-1 relative rounded-md">
+                            <div class="absolute inset-y-0 left-0 pl-1 sm:pl-3 flex items-center pointer-events-none">
+                                <span class="text-dd-muted text-xl sm:text-2xl">$</span>
+                            </div>
+                            <input type="text" id="montoRecibido" inputmode="numeric" required aria-required="true"
+                                class="money-input block w-full pl-6 sm:pl-9 pr-2 rounded-md text-xl sm:text-2xl bg-dd-inset border border-dd-border py-2"
+                                placeholder="0" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-dd-inset p-4 rounded-lg space-y-4">
+                    <!-- Posnet -->
+                    <div>
+                        <h4 class="text-sm sm:text-md font-medium text-dd-primary mb-4">Posnet: <span class="text-dd-error" aria-hidden="true">*</span></h4>
+                        <div class="relative">
+                            <select id="posnetSelect" aria-required="true"
+                                class="w-full appearance-none bg-dd-inset border border-dd-border text-dd-primary text-sm rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-dd-brand focus:border-dd-brand hover:border-dd-brand">
+                                <option value="">Seleccionar posnet</option>
+                                {% for posnet in posnets %}
+                                <option value="{{ posnet.id }}">{{ posnet.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            <div
+                                class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-dd-muted">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Número de operación -->
+                    <div class="pt-4">
+                        <h4 class="text-sm sm:text-md font-medium text-dd-primary mb-4">Número de operación: <span class="text-dd-error" aria-hidden="true">*</span></h4>
+                        <input id="numeroOperacionInput" type="text" aria-required="true"
+                            placeholder="Número de operación"
+                            class="w-full appearance-none bg-dd-inset border border-solid border-dd-border text-dd-primary text-sm rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-dd-brand focus:border-dd-brand hover:border-dd-brand" />
+                    </div>
+
+                    <!-- Comprobante: opcional en QR -->
+                    <div class="pt-4">
+                        <h4 class="text-sm sm:text-md font-medium text-dd-primary mb-4">
+                            Comprobante: <span class="text-dd-muted font-normal">(opcional)</span>
+                        </h4>
+                        <div id="fileDropZone"
+                             class="flex flex-col items-center justify-center w-full min-h-20 border-2 border-dashed border-dd-border rounded-lg cursor-pointer hover:bg-dd-elevated hover:border-dd-brand transition group">
+                            <input id="fileInput"
+                                   name="proof_of_payment_file"
+                                   type="file"
+                                   accept=".jpg,.jpeg,.png,.gif,.pdf"
+                                   class="hidden">
+                            <!-- Preview -->
+                            <div id="filePreview" class="m-3 hidden"></div>
+                            <div id="fileContent"
+                                 class="flex flex-col items-center space-y-2 text-dd-muted group-hover:text-dd-secondary transition-colors">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                    </path>
+                                </svg>
+                                <span class="text-sm">Subir archivo (opcional)</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-dd-muted mt-2">Formatos permitidos: JPG, PNG, GIF o PDF. Tamaño máximo: 5MB.</p>
+                        <div class="flex justify-end mt-2">
+                            <button type="button"
+                                    id="clearFileBtn"
+                                    class="hidden text-xs text-dd-error hover:text-dd-error transition-colors"
+                                    onclick="clearFile()">Eliminar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-dd-inset p-4 rounded-lg space-y-4">
+                    <!-- Professional Selection -->
+                    <div>
+                        <h4 class="text-sm sm:text-md font-medium text-dd-primary mb-4">Profesional: <span class="text-dd-error" aria-hidden="true">*</span></h4>
+                        <div class="relative">
+                            <select id="professionalSelect" aria-required="true"
+                                class="w-full appearance-none bg-dd-inset border border-dd-border text-dd-primary text-sm rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-dd-brand focus:border-dd-brand hover:border-dd-brand">
+                                <option value="">Seleccionar profesional</option>
+                                {% for sp in professionals %}
+                                <option value="{{ sp.id }}">
+                                    {{ sp.last_name | default:sp.username }} {{sp.first_name | default:'' }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div
+                                class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-dd-muted">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Patient Name -->
+                    <div class="pt-4 border-dd-border">
+                        <h4 class="text-sm sm:text-md font-medium text-dd-primary mb-4">Nombre del paciente: <span class="text-dd-error" aria-hidden="true">*</span></h4>
+                        <input id="patientNameInput" type="text" aria-required="true" placeholder="Nombre del paciente"
+                            class="w-full appearance-none bg-dd-inset border border-solid border-dd-border text-dd-primary text-sm rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-dd-brand focus:border-dd-brand hover:border-dd-brand" />
+                    </div>
+
+                    <!-- Observaciones -->
+                    <div class="pt-4">
+                        <div class="flex items-center mb-2">
+                            <h4 class="text-xs sm:text-sm font-medium text-dd-primary">Observaciones:</h4>
+                        </div>
+                        <textarea id="observacionesInput"
+                            class="w-full rounded-md bg-dd-inset border border-dd-border p-2 text-md text-dd-primary focus:outline-none focus:ring-1 focus:ring-dd-brand focus:border-dd-brand hover:border-dd-brand placeholder:text-sm"
+                            placeholder="Información adicional"></textarea>
+                    </div>
+                </div>
+
+
+                <p class="text-xs text-dd-muted mt-4">
+                    <span class="text-dd-error" aria-hidden="true">*</span> Campos obligatorios.
+                </p>
+
+                <button type="button" id="createQrPaymentBtn"
+                    class="mt-4 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#8CBE4F] hover:bg-dd-brand-active focus:outline-none focus:ring-2 focus:ring-dd-brand-active disabled:bg-dd-elevated disabled:text-dd-muted disabled:cursor-not-allowed">
+                    Crear pago
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Traduce el nombre de campo que manda el backend al id del input de esta pantalla.
+        // El comprobante apunta a fileDropZone: el <input type="file"> está oculto y un
+        // error escrito debajo de un elemento invisible no lo ve nadie.
+        window.DD_FIELD_IDS = {
+            monto_cobrado: 'montoCobrado',
+            monto_recibido: 'montoRecibido',
+            posnet_id: 'posnetSelect',
+            numero_operacion: 'numeroOperacionInput',
+            patient_name: 'patientNameInput',
+            professional_id: 'professionalSelect',
+            proof_of_payment_file: 'fileDropZone',
+        };
+
+        const createQrPaymentBtn = document.getElementById('createQrPaymentBtn');
+        const professionalSelect = document.getElementById('professionalSelect');
+        const observacionesInput = document.getElementById('observacionesInput');
+        const patientNameInput = document.getElementById('patientNameInput');
+        const montoCobradoInput = document.getElementById('montoCobrado');
+        const montoRecibidoInput = document.getElementById('montoRecibido');
+        const posnetSelect = document.getElementById('posnetSelect');
+        const numeroOperacionInput = document.getElementById('numeroOperacionInput');
+
+
+
+        // File upload functionality (comprobante opcional en QR)
+        const fileInput = document.getElementById('fileInput');
+        const fileDropZone = document.getElementById('fileDropZone');
+        const fileContent = document.getElementById('fileContent');
+        const clearFileBtn = document.getElementById('clearFileBtn');
+        const preview = document.getElementById('filePreview');
+        let selectedFile = null;
+
+        fileInput.addEventListener('change', function (e) {
+            hideMessages();
+            const file = e.target.files[0];
+            handleFileSelection(file);
+        });
+
+        fileDropZone.addEventListener('dragover', function (e) {
+            hideMessages();
+            e.preventDefault();
+            fileDropZone.classList.add('border-dd-brand', 'bg-dd-elevated');
+        });
+
+        fileDropZone.addEventListener('dragleave', function (e) {
+            hideMessages();
+            e.preventDefault();
+            fileDropZone.classList.remove('border-dd-brand', 'bg-dd-elevated');
+        });
+
+        fileDropZone.addEventListener('drop', function (e) {
+            e.preventDefault();
+            fileDropZone.classList.remove('border-dd-brand', 'bg-dd-elevated');
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                fileInput.files = e.dataTransfer.files;
+                hideMessages();
+                handleFileSelection(file);
+            }
+        });
+
+        fileDropZone.addEventListener('click', function () {
+            fileInput.click();
+        });
+
+        function handleFileSelection(file) {
+            if (!file) return;
+
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
+            if (!validTypes.includes(file.type)) {
+                showFieldError('proof_of_payment_file', 'Tipo de archivo no válido. Solo se permiten imágenes y PDFs.');
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                showFieldError('proof_of_payment_file', 'El archivo es demasiado grande. Máximo 5MB.');
+                return;
+            }
+
+            selectedFile = file;
+            displaySelectedFile(file);
+        }
+
+        function displaySelectedFile(file) {
+            fileContent.innerHTML = ``;
+            clearFileBtn.classList.remove('hidden');
+            preview.innerHTML = "";
+            preview.classList.remove('hidden');
+
+            if (file.type.startsWith("image/")) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const img = document.createElement("img");
+                    img.src = e.target.result;
+                    img.classList.add("rounded-lg", "shadow-md", "max-h-48");
+                    preview.appendChild(img);
+                    preview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+
+            else if (file.type === "application/pdf") {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const typedarray = new Uint8Array(e.target.result);
+
+                    pdfjsLib.getDocument(typedarray).promise.then(function (pdf) {
+                        pdf.getPage(1).then(function (page) {
+                            const viewport = page.getViewport({ scale: 1 });
+                            const canvas = document.createElement("canvas");
+                            const context = canvas.getContext("2d");
+
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+
+                            const renderContext = {
+                                canvasContext: context,
+                                viewport: viewport
+                            };
+
+                            page.render(renderContext).promise.then(function () {
+                                const img = document.createElement("img");
+                                img.src = canvas.toDataURL("image/png");
+                                img.classList.add("rounded-lg", "shadow-md", "max-h-48");
+                                preview.appendChild(img);
+                            });
+                        });
+                    });
+                };
+                reader.readAsArrayBuffer(file);
+            }
+
+            else {
+                const p = document.createElement("p");
+                p.textContent = "Vista previa no disponible. Archivo: " + file.name;
+                p.classList.add("text-dd-secondary", "text-sm", "mt-2");
+                preview.appendChild(p);
+            }
+        }
+
+        clearFileBtn.addEventListener('click', clearFile);
+
+        function clearFile() {
+            selectedFile = null;
+            fileInput.value = '';
+            clearFileBtn.classList.add('hidden');
+            preview.classList.add('hidden');
+
+            fileContent.innerHTML = `
+                <div class="flex items-center space-x-2 text-dd-muted group-hover:text-dd-secondary transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                    <span class="text-sm">Subir archivo (opcional)</span>
+                </div>
+            `;
+
+            document.getElementById('filePreview').innerHTML = "";
+        }
+
+        // Create QR payment function
+        createQrPaymentBtn.addEventListener('click', async function () {
+            hideMessages();
+
+            const montoCobrado = montoCobradoInput.value.replace(/\./g, '');
+            const montoRecibido = montoRecibidoInput.value.replace(/\./g, '');
+            const patientName = (patientNameInput ? patientNameInput.value : '').trim();
+            const professionalId = professionalSelect ? professionalSelect.value : '';
+            const posnetId = posnetSelect.value;
+            const numeroOperacion = numeroOperacionInput.value.trim();
+
+            const cobradoOk = !!montoCobrado && parseInt(montoCobrado) > 0;
+            const recibidoOk = !!montoRecibido && parseInt(montoRecibido) > 0;
+
+            const reglas = [
+                { field: 'monto_cobrado', ok: cobradoOk, message: 'El monto debe ser mayor a cero' },
+                { field: 'monto_recibido', ok: recibidoOk, message: 'El monto debe ser mayor a cero' },
+                { field: 'posnet_id', ok: !!posnetId, message: 'Elegí un posnet.' },
+                {
+                    field: 'numero_operacion',
+                    ok: !!numeroOperacion,
+                    message: 'Número de operación es requerido.',
+                },
+                {
+                    field: 'professional_id',
+                    ok: !!professionalId,
+                    message: 'Profesional es requerido',
+                },
+                {
+                    field: 'patient_name',
+                    ok: !!patientName,
+                    message: 'Nombre del paciente es requerido.',
+                },
+            ];
+
+            if (cobradoOk && recibidoOk && parseInt(montoCobrado) < parseInt(montoRecibido)) {
+                reglas.push({
+                    field: 'monto_cobrado',
+                    ok: false,
+                    message: 'El monto cobrado no puede ser menor al monto recibido.',
+                });
+            }
+
+            if (!validarCampos(reglas)) return;
+
+            createQrPaymentBtn.disabled = true;
+            createQrPaymentBtn.textContent = 'Creando...';
+
+            try {
+                const fd = new FormData();
+                fd.append('monto_cobrado', parseInt(montoCobrado, 10));
+                fd.append('monto_recibido', parseInt(montoRecibido, 10));
+                fd.append('posnet_id', posnetId);
+                fd.append('numero_operacion', numeroOperacion);
+                fd.append('professional_id', professionalId);
+                fd.append('patient_name', patientName);
+                fd.append('observaciones', observacionesInput.value);
+                if (selectedFile) fd.append('proof_of_payment_file', selectedFile);
+
+                const response = await fetch('{% url "payment_instructions:create_qr_payment" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                    body: fd
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    hideMessages();
+                    showSuccess(data.message);
+                    montoCobradoInput.value = '';
+                    montoRecibidoInput.value = '';
+                    professionalSelect.value = '';
+                    posnetSelect.value = '';
+                    numeroOperacionInput.value = '';
+                    observacionesInput.value = '';
+                    if (patientNameInput) patientNameInput.value = '';
+                    clearFile();
+                } else {
+                    handleApiError(data);
+                }
+            } catch (error) {
+                showError('Error de conexión. Revisá tu conexión e intentá de nuevo.');
+            } finally {
+                createQrPaymentBtn.disabled = false;
+                createQrPaymentBtn.textContent = 'Crear pago';
+            }
+        });
+
+
+        // Page-load animations
+        document.addEventListener('DOMContentLoaded', function () {
+            const staged = document.querySelectorAll('[data-animate="fade-in"]');
+            staged.forEach((el, idx) => {
+                setTimeout(() => {
+                    el.classList.add('animate-fade-in');
+                    const onEnd = () => {
+                        el.classList.remove('animate-fade-in');
+                        el.classList.remove('opacity-0');
+                        el.removeEventListener('animationend', onEnd);
+                    };
+                    el.addEventListener('animationend', onEnd);
+                }, idx * 60);
+            });
+        });
+
+        // Money input formatter, generalizado para recibir el id del input
+        function setupMoneyFormatter(inputId) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+
+            const MAX_VALUE = 100_000_000;
+
+            function getDigits(value) {
+                return (value || '').replace(/\D+/g, '');
+            }
+
+            function stripDots(value) {
+                return (value || '').replace(/\./g, '');
+            }
+
+            function formatWithDots(digits) {
+                if (!digits) return '';
+                digits = digits.replace(/^0+(\d)/, '$1');
+                return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            }
+
+            function clampToMax(digits) {
+                if (!digits) return '';
+                const normalized = digits.replace(/^0+/, '') || '0';
+                if (normalized.length < String(MAX_VALUE).length) return normalized;
+                if (normalized.length > String(MAX_VALUE).length) return String(MAX_VALUE);
+                return (parseInt(normalized, 10) > MAX_VALUE) ? String(MAX_VALUE) : normalized;
+            }
+
+            function setSelection(el, start, end) {
+                el.setSelectionRange(start, end);
+            }
+
+            function handleInput(e) {
+                const el = e.target;
+                const prev = el.value;
+                const prevRaw = stripDots(prev);
+                const prevPos = el.selectionStart || 0;
+
+                const leftPrevDigits = getDigits(prev.slice(0, prevPos)).length;
+
+                let digits = getDigits(prevRaw);
+                digits = clampToMax(digits);
+
+                if (digits === '') {
+                    el.value = '';
+                    return;
+                }
+
+                const next = formatWithDots(digits);
+                el.value = next;
+
+                let digitsSeen = 0;
+                let newCaret = 0;
+                for (let i = 0; i < next.length; i++) {
+                    if (next[i] !== '.') {
+                        digitsSeen++;
+                    }
+                    if (digitsSeen >= leftPrevDigits) {
+                        newCaret = i + 1;
+                        break;
+                    }
+                }
+                if (leftPrevDigits > digitsSeen) newCaret = next.length;
+                setSelection(el, newCaret, newCaret);
+            }
+
+            function handleKeyDown(e) {
+                const allowedControl = [
+                    'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+                    'Home', 'End', 'Tab'
+                ];
+                const isMod = e.ctrlKey || e.metaKey;
+                if (isMod) {
+                    const k = e.key.toLowerCase();
+                    if (k === 'a' || k === 'c' || k === 'x' || k === 'v' || k === 'z' || k === 'y') {
+                        return;
+                    }
+                }
+                if (allowedControl.includes(e.key)) return;
+
+                if (!/^[0-9]$/.test(e.key)) {
+                    e.preventDefault();
+                    return;
+                }
+
+                const raw = getDigits(stripDots(input.value));
+                const selectionStart = input.selectionStart || 0;
+                const selectionEnd = input.selectionEnd || 0;
+                const left = getDigits(stripDots(input.value.slice(0, selectionStart)));
+                const right = getDigits(stripDots(input.value.slice(selectionEnd)));
+                const predicted = (left + e.key + right).replace(/^0+(\d)/, '$1');
+                const clamped = clampToMax(predicted);
+                if (clamped !== predicted) {
+                    e.preventDefault();
+                }
+            }
+
+            function handlePaste(e) {
+                e.preventDefault();
+                const text = (e.clipboardData || window.clipboardData).getData('text');
+                let digits = getDigits(text);
+                digits = clampToMax(digits);
+
+                if (!digits) return;
+
+                const formatted = formatWithDots(digits);
+                input.value = formatted;
+                const caret = formatted.length;
+                setSelection(input, caret, caret);
+            }
+
+            input.addEventListener('input', handleInput);
+            input.addEventListener('keydown', handleKeyDown);
+            input.addEventListener('paste', handlePaste);
+        }
+
+        setupMoneyFormatter('montoCobrado');
+        setupMoneyFormatter('montoRecibido');
+    </script>
+    {% include "payment_instructions/_form_errors.html" %}
+</body>
+
+</html>

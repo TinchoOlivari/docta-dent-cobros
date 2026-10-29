@@ -1,0 +1,105 @@
+{% extends "sistema/base.html" %}
+{% load pesos ui %}
+{% block title %}Cobro {{ cobro.pk }}{% endblock %}
+{% block migas %}<li><a href="{% url 'cobros:lista' %}">Cobros</a></li><li><span aria-current="page">Cobro {{ cobro.pk }}</span></li>{% endblock %}
+{% block titulo %}Cobro {{ cobro.pk }}{% endblock %}
+{% block subtitulo %}<div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+  {% badge cobro.estado cobro.get_estado_display %}
+  {% if cobro.migrado %}{% badge "migrado" "Migrado del sistema anterior" %}{% endif %}
+  {% if cobro.faltan_items %}<span class="inline-flex flex-nowrap items-center gap-1">{% badge "revisar" "Sin vincular a Dentalink" %}<c-ayuda tema="Sin vincular a Dentalink" texto="El cobro no tiene prestaciones de Dentalink y no se envía. Tocá «Vincular con Dentalink» para elegirlas." /></span>{% endif %}
+  {% if es_admin and cobro.excedente %}<span class="inline-flex items-center gap-1">{% badge "excedente" "Excedente" %}<c-ayuda tema="Excedente" texto="Este cobro hizo pasar el tope mensual de la cuenta. Un administrador lo debe revisar." /></span>{% if cobro.revisado %}{% badge "revisado" "Revisado" %}{% endif %}{% endif %}
+  {% if sin_factura_vigente %}<span class="inline-flex items-center gap-1">{% badge "revisar" "Sin factura vigente" %}<c-ayuda tema="Sin factura vigente" texto="El cobro está Finalizado y corresponde factura, pero no tiene ninguna factura vigente." /></span>{% endif %}
+</div>{% endblock %}
+{% block acciones %}
+<c-boton href="{% url 'dentalink:pacientes' %}" variante="primario" icono="plus">Registrar otro cobro</c-boton>
+{% if es_admin %}
+{% if cobro.estado != "cancelado" %}<c-boton href="{% url 'cobros:editar' cobro.pk %}" variante="secundario" icono="file-text">Editar</c-boton>{% endif %}
+<c-boton href="{% url 'auditoria:historial' 'cobros.cobro' cobro.pk %}" variante="secundario" icono="clock">Historial</c-boton>
+{% endif %}
+{% endblock %}
+{% block content %}
+<div class="grid gap-4 lg:grid-cols-3">
+ <div class="space-y-4 lg:col-span-2">
+  {% if pendiente_transferencia %}
+  {% include "cobros/_detalle_cuenta.html" %}
+  {% include "cobros/_detalle_comprobantes.html" %}
+  {% include "cobros/_detalle_datos.html" %}
+  {% include "cobros/_detalle_items.html" %}
+  {% include "cobros/_detalle_obs.html" %}
+  {% if es_admin %}{% include "arca/_factura.html" %}{% endif %}
+  {% else %}
+  {% include "cobros/_detalle_datos.html" %}
+  {% include "cobros/_detalle_cuenta.html" %}
+  {% include "cobros/_detalle_comprobantes.html" %}
+  {% include "cobros/_detalle_items.html" %}
+  {% if es_admin %}{% include "arca/_factura.html" %}{% endif %}
+  {% include "cobros/_detalle_obs.html" %}
+  {% endif %}
+ </div>
+
+ <div class="space-y-4">
+  {% if es_admin and cobro.excedente and not cobro.revisado %}
+  <section class="card2" aria-labelledby="h-rev">
+    <div class="hd"><h2 id="h-rev">Excedente sin revisar</h2></div>
+    <form method="post" action="{% url 'cobros:revisado' cobro.pk %}" class="bd2 space-y-3">
+      {% csrf_token %}
+      <div><label for="comentario-revision" class="lbl-f">Comentario de revisión</label>
+      <textarea class="textarea" id="comentario-revision" name="comentario" rows="2" placeholder="Ej.: se habló con el destinatario y está de acuerdo." required></textarea></div>
+      <c-boton variante="primario" icono="check">Marcar revisado</c-boton>
+    </form>
+  </section>
+  {% endif %}
+
+  {% if cantidad_mas_acciones %}
+  <c-mas-acciones :cantidad="cantidad_mas_acciones" :abierto="cancelar_abierto">
+  {% if puede_reabrir %}
+  <section class="w-full space-y-3" aria-labelledby="h-reabrir">
+    <h3 id="h-reabrir" class="font-semibold">Reabrir el cobro</h3>
+    <form method="post" action="{% url 'cobros:reabrir' cobro.pk %}" class="space-y-3" id="form-reabrir" novalidate>
+      {% csrf_token %}
+      <input type="hidden" name="estado_visto" value="{{ cobro.estado }}">
+      <div><label for="reabrir-motivo" class="lbl-f">Motivo</label>
+      <textarea class="textarea" id="reabrir-motivo" name="motivo" rows="2" required></textarea>
+      <p class="hint">El cobro vuelve a Pendiente. Queda registrado en el historial.</p></div>
+      <c-boton variante="secundario" icono="rotate-ccw" data-confirmar-form="form-reabrir" data-confirmar-dialogo="confirmar-reabrir">Reabrir</c-boton>
+    </form>
+  </section>
+  {% endif %}
+  {% if puede_cancelar %}
+  <section class="w-full" aria-labelledby="h-cancelar">
+    <h3 id="h-cancelar" class="mb-3 font-semibold">Cancelar el cobro</h3>
+    <form method="post" action="{% url 'cobros:cancelar' cobro.pk %}" class="space-y-3" id="form-cancelar" novalidate>
+      {% csrf_token %}
+      <input type="hidden" name="estado_visto" value="{{ cobro.estado }}">
+      <div><label for="cancelar-motivo" class="lbl-f">Motivo</label>
+      <select class="select" id="cancelar-motivo" name="motivo" required{% if cancelar_errores.motivo %} aria-invalid="true" aria-describedby="cancelar-motivo-error" autofocus{% endif %}>
+        <option value=""{% if not cancelar_motivo %} selected{% endif %}>Elegí un motivo</option>
+        {% for valor, etiqueta in motivos %}<option value="{{ valor }}"{% if valor == cancelar_motivo %} selected{% endif %}>{{ etiqueta }}</option>{% endfor %}
+      </select>
+      {% if cancelar_errores.motivo %}<p id="cancelar-motivo-error" class="err-msg" role="alert"><c-icono nombre="circle-alert" clase="size-4" /><span>{{ cancelar_errores.motivo }}</span></p>{% endif %}</div>
+      <div><label for="cancelar-detalle" class="lbl-f">Detalle</label>
+      <textarea class="textarea" id="cancelar-detalle" name="detalle" rows="2" placeholder="Detalle (obligatorio con «Otro»)"{% if cancelar_errores.detalle %} aria-invalid="true" aria-describedby="cancelar-detalle-error"{% if not cancelar_errores.motivo %} autofocus{% endif %}{% endif %}>{{ cancelar_detalle }}</textarea>
+      {% if cancelar_errores.detalle %}<p id="cancelar-detalle-error" class="err-msg" role="alert"><c-icono nombre="circle-alert" clase="size-4" /><span>{{ cancelar_errores.detalle }}</span></p>{% endif %}</div>
+      {% if factura_emitida %}
+      <fieldset class="space-y-1" id="pregunta-nota-credito"{% if cancelar_errores.nota_credito %} aria-invalid="true" aria-describedby="cancelar-nota-error"{% endif %}>
+        <legend class="font-medium">¿Emitir nota de crédito por {{ factura_emitida.total|pesos }}?</legend>
+        <label class="flex min-h-[44px] items-center gap-2"><input type="radio" name="nota_credito" value="si" required> Sí</label>
+        <label class="flex min-h-[44px] items-center gap-2"><input type="radio" name="nota_credito" value="no"> No</label>
+      </fieldset>
+      {% if cancelar_errores.nota_credito %}<p id="cancelar-nota-error" class="err-msg" role="alert"><c-icono nombre="circle-alert" clase="size-4" /><span>{{ cancelar_errores.nota_credito }}</span></p>{% endif %}
+      {% endif %}
+      <c-boton variante="peligro" icono="circle-x" data-confirmar-form="form-cancelar" data-confirmar-dialogo="confirmar-cancelar">Cancelar cobro</c-boton>
+    </form>
+  </section>
+  {% endif %}
+  </c-mas-acciones>
+  {% endif %}
+  {% if puede_reabrir %}
+  <c-confirmar id="confirmar-reabrir" titulo="Reabrir el cobro" texto="El cobro vuelve a Pendiente." boton="Reabrir" variante="primario" />
+  {% endif %}
+  {% if puede_cancelar %}
+  <c-confirmar id="confirmar-cancelar" titulo="Cancelar el cobro" texto="El cobro se cancela y no se puede deshacer." boton="Cancelar cobro" />
+  {% endif %}
+ </div>
+</div>
+{% endblock %}

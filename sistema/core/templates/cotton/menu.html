@@ -1,0 +1,11 @@
+<c-vars texto="" contador="" icono="" etiqueta="" lado="" deshabilitado="" />
+{# Menú con botón (023/FR-007). `contador` y `deshabilitado` son expresiones de Alpine. #}
+<details class="dropdown{% if lado == 'fin' %} dropdown-end{% endif %}" data-menu>
+  <summary class="{% if texto %}btn btn-secundario{% else %}icon-btn list-none{% endif %}" aria-expanded="false"{% if etiqueta %} aria-label="{{ etiqueta }}"{% endif %}{% if deshabilitado %} x-bind:aria-disabled="({{ deshabilitado }}) ? 'true' : null"{% endif %}>
+    {% if icono %}<c-icono :nombre="icono" clase="size-5" />{% endif %}
+    {% if texto %}<span>{{ texto }}{% if contador %}<span x-text="' (' + ({{ contador }}) + ')'"></span>{% endif %}</span>{% endif %}
+  </summary>
+  <div class="dropdown-content ayuda-panel">
+    <ul class="menu menu-acciones w-full p-0">{{ slot }}</ul>
+  </div>
+</details>

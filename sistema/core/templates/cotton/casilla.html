@@ -1,0 +1,15 @@
+<c-vars ayuda="" />
+{% load ui %}
+<div class="field">
+  <label for="{{ campo.id_for_label }}" class="flex min-h-11 items-center gap-3 font-medium">
+    {{ campo|campo_accesible }}
+    <span>{{ campo.label }}</span>
+  </label>
+  {% if ayuda or campo.help_text %}<p id="{{ campo.auto_id }}-ayuda" class="hint">{{ ayuda|default:campo.help_text }}</p>{% endif %}
+  {% if campo.errors %}
+    <p id="{{ campo.auto_id }}-error" class="err-msg" role="alert">
+      <c-icono nombre="circle-alert" clase="size-4" />
+      <span>{% for error in campo.errors %}{{ error }}{% if not forloop.last %} {% endif %}{% endfor %}</span>
+    </p>
+  {% endif %}
+</div>

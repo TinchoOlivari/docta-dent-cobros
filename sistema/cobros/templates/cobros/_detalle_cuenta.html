@@ -1,0 +1,24 @@
+{% load pesos ui %}
+  {% if ver_cuenta and lineas_cuenta %}
+  <section class="card2" aria-labelledby="h-cuenta">
+    <div class="hd"><h2 id="h-cuenta">Cuenta destino</h2></div>
+    <div class="bd2 space-y-3">
+      {% if cobro.cuenta.titular %}
+      <div><small class="block text-ink-3">Titular</small><span class="text-lg font-semibold">{{ cobro.cuenta.titular }}</span></div>
+      {% endif %}
+      {% if cobro.cuenta.titular_cuit %}
+      <div><small class="block text-ink-3">CUIT o CUIL</small><span class="text-lg font-semibold tabular-nums">{{ cobro.cuenta.titular_cuit|cuit }}</span></div>
+      {% endif %}
+      {% if cobro.cuenta.alias %}
+      <div class="copyrow"><div class="min-w-0"><small class="block text-ink-3">Alias</small><code class="break-all text-lg font-semibold">{{ cobro.cuenta.alias }}</code></div><button type="button" class="btn btn-secundario" data-copiar="{{ cobro.cuenta.alias }}">Copiar</button></div>
+      {% endif %}
+      {% if cobro.cuenta.cbu %}
+      <div class="copyrow"><div class="min-w-0"><small class="block text-ink-3">CBU o CVU</small><code class="break-all text-lg font-semibold">{{ cobro.cuenta.cbu|cbu }}</code></div><button type="button" class="btn btn-secundario" data-copiar="{{ cobro.cuenta.cbu }}">Copiar</button></div>
+      {% endif %}
+      {# djlint:off H023 #}
+      <button type="button" class="btn btn-secundario" data-copiar="{% for l in lineas_cuenta %}{{ l }}{% if not forloop.last %}&#10;{% endif %}{% endfor %}">Copiar todo</button>
+      {# djlint:on #}
+    </div>
+  </section>
+  {% endif %}
+

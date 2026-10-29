@@ -1,0 +1,147 @@
+{% load dd_filters %}
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="robots" content="noindex, nofollow">
+        <title>Docta Dent - Transferencias pendientes</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="shortcut icon"
+              type="image/png"
+              href="https://doctadent.com.ar/wp-content/uploads/2021/04/ico-Docta-Dent-150x150.png">
+    </head>
+    <style>
+    body {
+        background-color: #18201C;
+        color: #EEF3ED;
+    }
+
+    .bg-dd-page { background-color: #18201C; }
+    .bg-dd-surface { background-color: #202A24; }
+    .bg-dd-elevated { background-color: #2B372F; }
+    .bg-dd-inset { background-color: #263129; }
+    .bg-dd-brand { background-color: #A4D468; }
+    .text-dd-primary { color: #EEF3ED; }
+    .text-dd-secondary { color: #C2CEC4; }
+    .text-dd-muted { color: #A6B3A9; }
+    .text-dd-brand { color: #A4D468; }
+    .text-dd-page { color: #18201C; }
+    .text-dd-error { color: #F87171; }
+    .bg-dd-error { background-color: #C53030; }
+    .focus\:ring-dd-brand:focus { box-shadow: 0 0 0 2px #A4D468; }
+    .border-dd-border { border-color: #3B4A40; }
+    .hover\:bg-dd-elevated:hover { background-color: #334238; }
+    .hover\:text-dd-brand:hover { color: #A4D468; }
+
+    @keyframes fade-in-soft {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-fade-in {
+        animation: fade-in-soft 320ms ease-out both;
+    }
+    </style>
+    <body class="bg-dd-page min-h-screen text-dd-primary">
+        {% include "payment_instructions/_staging_banner.html" %}
+        {% url 'payment_instructions:operator_dashboard' as dashboard_url %}
+        {% include "payment_instructions/_operator_nav.html" with title="Transferencias pendientes" back_url=dashboard_url %}
+        <div class="max-w-5xl mx-auto pt-4 pb-24 px-4 sm:py-6 sm:px-6">
+            <div data-animate="fade-in"
+                 class="bg-dd-surface overflow-hidden shadow-lg rounded-lg opacity-0 p-4 sm:p-6">
+                <div id="listaPendientes"{% if not pendientes %} class="hidden"{% endif %}>
+                    <p class="text-dd-muted text-sm mb-4">
+                        Un pago pendiente debe completarse con el comprobante o cancelarse.
+                        Los más viejos aparecen primero.
+                    </p>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-left text-dd-muted border-b border-dd-border">
+                                    <th class="py-2 pr-4">Monto</th>
+                                    <th class="py-2 pr-4">Paciente</th>
+                                    <th class="py-2 pr-4">Profesional</th>
+                                    <th class="py-2 pr-4">Destinatario</th>
+                                    <th class="py-2 pr-4">Desde</th>
+                                    {% if request.user.is_superuser %}
+                                        <th class="py-2 pr-4">Operador</th>
+                                    {% endif %}
+                                    <th class="py-2"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pago in pendientes %}
+                                    <tr class="border-b border-dd-border last:border-0"
+                                        data-payment-row="{{ pago.id }}">
+                                        <td class="py-3 pr-4 text-dd-primary font-mono whitespace-nowrap">${{ pago.amount_display }}</td>
+                                        <td class="py-3 pr-4 text-dd-primary whitespace-nowrap max-w-[10rem] truncate" title="{{ pago.patient_name }}">{{ pago.patient_name }}</td>
+                                        <td class="py-3 pr-4 text-dd-primary whitespace-nowrap max-w-[10rem] truncate" title="{{ pago.professional.get_full_name|default:pago.professional.username }}">{{ pago.professional.get_full_name|default:pago.professional.username }}</td>
+                                        <td class="py-3 pr-4 text-dd-secondary whitespace-nowrap max-w-[10rem] truncate" title="{{ pago.payment_recipient.name|default:"—" }}">{{ pago.payment_recipient.name|default:"—" }}</td>
+                                        <td class="py-3 pr-4 text-dd-muted whitespace-nowrap"
+                                            title="{{ pago.created_at|date:"d/m/Y H:i" }}">
+                                            hace {{ pago.created_at|timesince_short }}
+                                        </td>
+                                        {% if request.user.is_superuser %}
+                                            <td class="py-3 pr-4 text-dd-secondary whitespace-nowrap">{{ pago.operator_user.username }}</td>
+                                        {% endif %}
+                                        <td class="py-3 whitespace-nowrap">
+                                            {% if pago.operator_user_id == own_operator_id or puede_gestionar_ajenos %}
+                                                <a href="{% url 'payment_instructions:resume_transfer_payment_form' pago.id %}"
+                                                   class="text-dd-brand hover:underline">Completar</a>
+                                                <button type="button"
+                                                        class="ml-3 text-dd-error hover:underline"
+                                                        data-cancel-payment="{{ pago.id }}">Cancelar</button>
+                                            {% else %}
+                                                <span class="text-dd-muted text-xs">de otro operador</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <p id="sinPendientes"
+                   class="text-dd-secondary text-center py-8{% if pendientes %} hidden{% endif %}">
+                    No hay transferencias pendientes.
+                </p>
+            </div>
+        </div>
+        {% include "payment_instructions/_cancel_dialog.html" %}
+        <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const staged = document.querySelectorAll('[data-animate="fade-in"]');
+            staged.forEach((el, idx) => {
+                setTimeout(() => {
+                    el.classList.add('animate-fade-in');
+                    const onEnd = () => {
+                        el.classList.remove('animate-fade-in');
+                        el.classList.remove('opacity-0');
+                        el.removeEventListener('animationend', onEnd);
+                    };
+                    el.addEventListener('animationend', onEnd);
+                }, idx * 60);
+            });
+        });
+        </script>
+        <script>
+        // El diálogo vive en _cancel_dialog.html; acá solo se dice qué hacer después.
+        document.querySelectorAll('[data-cancel-payment]').forEach(function (boton) {
+            boton.addEventListener('click', function () {
+                const id = boton.dataset.cancelPayment;
+                window.abrirCancelDialog(id, function () {
+                    const fila = document.querySelector('[data-payment-row="' + id + '"]');
+                    if (fila) fila.remove();
+                    if (!document.querySelector('[data-payment-row]')) {
+                        document.getElementById('listaPendientes').classList.add('hidden');
+                        document.getElementById('sinPendientes').classList.remove('hidden');
+                    }
+                    showSuccess('Pago cancelado. El monto quedó liberado.');
+                });
+            });
+        });
+        </script>
+        {% include "payment_instructions/_form_errors.html" %}
+</body>
+</html>

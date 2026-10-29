@@ -1,0 +1,89 @@
+# Stack de desarrollo local — standalone, no extiende docker-compose.yml.
+# Postgres real, igual que staging y producción. SQLite no se usa en ningún ambiente.
+#
+# Uso:
+#   docker compose -f docker-compose.local.yml up --build
+#   docker compose -f docker-compose.local.yml exec web python manage.py createsuperuser
+#
+# nginx y certbot quedan afuera: no hacen falta para desarrollo, se pega
+# directo a localhost:8000. Redis también queda afuera: CELERY_TASK_ALWAYS_EAGER=True
+# en base.py corre las tasks sin broker.
+#
+# Migraciones corren solas en docker/web-entrypoint.sh antes de levantar gunicorn.
+
+name: doctadent-local
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: django_db_local
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: doctadent_local
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - local_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d doctadent_local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: django_web_local
+    restart: unless-stopped
+    environment:
+      - DJANGO_SETTINGS_MODULE=payment_system.settings.local
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=doctadent_local
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      # Sin valor: compose los toma del shell. Sin token, Dentalink queda "no disponible".
+      - DENTALINK_TOKEN
+      - DENTALINK_URL
+    volumes:
+      - .:/app
+      - static_volume_local:/app/staticfiles
+      - media_volume_local:/app/media
+    ports:
+      - "8000:8000"
+    healthcheck:
+      # gunicorn solo hace bind después del migrate, así que puerto abierto = schema listo
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 8000), 5).close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    depends_on:
+      db:
+        condition: service_healthy
+
+  celery:
+    build: .
+    container_name: django_celery_local
+    restart: unless-stopped
+    command: ["/bin/sh", "-c", "./docker/celery-entrypoint.sh"]
+    environment:
+      - DJANGO_SETTINGS_MODULE=payment_system.settings.local
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=doctadent_local
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+
+volumes:
+  local_postgres_data:
+  static_volume_local:
+  media_volume_local:

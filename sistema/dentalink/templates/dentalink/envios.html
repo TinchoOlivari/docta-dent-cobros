@@ -1,0 +1,65 @@
+{% extends "sistema/base.html" %}
+{% load pesos ui %}
+{% block title %}Envíos a Dentalink{% endblock %}
+{% block migas %}<li><a href="{% url 'dentalink:configuracion' %}">Dentalink</a></li><li><span aria-current="page">Envíos</span></li>{% endblock %}
+{% block titulo %}Envíos a Dentalink{% endblock %}
+{% block subtitulo %}Ítems que no llegaron a Dentalink o que piden revisión.{% endblock %}
+{% block acciones %}<c-boton href="{% url 'dentalink:configuracion' %}" icono="plug">Configuración</c-boton>{% endblock %}
+{% block content %}
+<div class="flex flex-col gap-4">
+<c-tarjeta>
+  <form method="get" role="search" class="filtros">
+    <div class="field !mb-0">
+      <label for="estado" class="lbl-f">Estado</label>
+      <select class="select" name="estado" id="estado">
+        <option value="">Error y Revisar en Dentalink</option>
+        {% for valor, etiqueta in estados %}
+        <option value="{{ valor }}"{% if valor == estado %} selected{% endif %}>{{ etiqueta }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <c-boton variante="primario" icono="search">Filtrar</c-boton>
+  </form>
+</c-tarjeta>
+<section class="card2" aria-label="Ítems">
+{% if pagina %}
+<c-tabla titulo_accesible="Ítems y su estado de envío a Dentalink">
+  <thead><tr>
+    <th scope="col">Cobro</th><th scope="col" class="col-sec">Referencia</th><th scope="col" class="col-sec">Paciente</th><th scope="col" class="col-sec col-monto">Monto</th>
+    <th scope="col" class="col-sec">Estado</th><th scope="col" class="col-sec col-monto">Intentos</th><th scope="col" class="col-sec">Último error</th><th scope="col"><span class="sr-only">Acciones</span></th>
+  </tr></thead>
+  <tbody>
+  {% for item in pagina %}
+  <tr>
+    <td class="tabular-nums"><a class="link text-brand-ink inline-flex min-h-[44px] items-center" href="{% url 'cobros:detalle' item.cobro_id %}">{{ item.cobro_id }}</a>
+      <small class="sub-movil">{{ item.cobro.nombre_paciente }}</small><small class="sub-movil">{{ item.monto|pesos }}</small>
+      <span class="sub-movil">{% badge item.estado_envio item.get_estado_envio_display %}</span>{% if item.ultimo_error %}<small class="sub-movil">{{ item.ultimo_error }}</small>{% endif %}</td>
+    <td class="col-sec whitespace-nowrap tabular-nums">{{ item.referencia }}</td>
+    <td class="col-sec">{{ item.cobro.nombre_paciente }}</td>
+    <td class="col-sec col-monto whitespace-nowrap font-medium">{{ item.monto|pesos }}</td>
+    <td class="col-sec">{% badge item.estado_envio item.get_estado_envio_display %}</td>
+    <td class="col-sec col-monto">{{ item.intentos }}</td>
+    <td class="col-sec max-w-xs">{{ item.ultimo_error }}</td>
+    <td><div class="flex flex-col items-start gap-1">
+      <a href="{% url 'auditoria:historial' 'cobros.itemcobro' item.pk %}" class="link text-brand-ink inline-flex min-h-[44px] items-center">Historial</a>
+      {% if item.estado_envio == "error" %}
+        {% include "dentalink/_boton.html" with accion="reintentar" texto="Reintentar" %}
+        {% include "dentalink/_boton.html" with accion="marcar-enviado" texto="Cargado a mano en Dentalink" %}
+      {% elif item.estado_envio == "revisar" %}
+        {% include "dentalink/_boton.html" with accion="marcar-enviado" texto="Marcar enviado" %}
+        {% include "dentalink/_boton.html" with accion="reintentar" texto="Reenviar" %}
+      {% elif item.estado_envio == "requiere_ajuste" %}
+        {% include "dentalink/_boton.html" with accion="marcar-ajustado" texto="Marcar ajustado" %}
+      {% endif %}
+    </div></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</c-tabla>
+{% with q="estado="|add:estado %}<c-paginacion :pagina="pagina" :query="q" nombre="envíos" />{% endwith %}
+{% else %}
+{% if estado %}<c-vacio filtrado="1" limpiar="{% url 'dentalink:envios' %}" />{% else %}<c-vacio texto="No hay ítems en este estado." />{% endif %}
+{% endif %}
+</section>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{# Control único de "Revisado" (021/FR-019). `pref`: "t" (tabla) o "m" (tarjeta); `htmx`: la tabla cambia la fila sin recargar. #}
+{% if c.excedente and not c.revisado %}
+<form id="revisar-{{ pref }}-{{ c.pk }}" method="post" action="{% url 'cobros:revisado' c.pk %}"{% if htmx %} hx-post="{% url 'cobros:revisado' c.pk %}" hx-target="closest tr" hx-swap="outerHTML"{% endif %}>
+  {% csrf_token %}
+  <input type="hidden" name="revisado" value="1">
+  <input type="hidden" name="next" value="{{ next_url }}">
+  <button type="submit" class="btn btn-ghost whitespace-nowrap text-warning" data-confirmar-form="revisar-{{ pref }}-{{ c.pk }}" data-confirmar-dialogo="comentario-{{ pref }}-{{ c.pk }}"><c-icono nombre="circle-alert" clase="size-4" /><span>Revisar excedente</span><span class="sr-only"> del cobro {{ c.pk }}</span></button>
+</form>
+<c-confirmar id="comentario-{{ pref }}-{{ c.pk }}" titulo="Revisar excedente del cobro {{ c.pk }}" texto="El cobro recibió más que el tope. Escribí por qué está bien (obligatorio)." boton="Marcar revisado" variante="primario">
+  <label for="comentario-{{ pref }}-{{ c.pk }}-texto" class="lbl-f">Comentario</label>
+  <textarea class="textarea" id="comentario-{{ pref }}-{{ c.pk }}-texto" name="comentario" form="revisar-{{ pref }}-{{ c.pk }}" rows="3"></textarea>
+</c-confirmar>
+{% else %}
+<form method="post" action="{% url 'cobros:revisado' c.pk %}"{% if htmx %} hx-post="{% url 'cobros:revisado' c.pk %}" hx-target="closest tr" hx-swap="outerHTML"{% endif %}>
+  {% csrf_token %}
+  <input type="hidden" name="revisado" value="{% if c.revisado %}0{% else %}1{% endif %}">
+  <input type="hidden" name="next" value="{{ next_url }}">
+  <button type="submit" class="inline-grid size-11 cursor-pointer place-items-center text-ink-2 hover:text-ink" aria-pressed="{% if c.revisado %}true{% else %}false{% endif %}"{% if c.revisado %} aria-label="Quitar revisado del cobro {{ c.pk }}"{% else %} aria-label="Marcar cobro {{ c.pk }} como revisado"{% endif %}>{% if c.revisado %}<c-icono nombre="circle-check" clase="size-4" />{% else %}<c-icono nombre="circle" clase="size-4" />{% endif %}</button>
+</form>
+{% endif %}

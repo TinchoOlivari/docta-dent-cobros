@@ -1,0 +1,23 @@
+{% load ui %}
+<aside id="menu" class="sb" x-on:keydown="trampa($event)">
+  <div class="flex items-center justify-between">
+    <a class="sb-brand" href="{% url 'usuarios:inicio' %}" title="Docta Dent"><span class="logo" aria-hidden="true">DD</span><span class="lbl">Docta Dent</span></a>
+    <button type="button" class="icon-btn only-mobile" x-on:click="cerrar()"><c-icono nombre="x" etiqueta="Cerrar menú" /></button>
+  </div>
+  <nav aria-label="Principal" class="nav">
+    {% include "sistema/componentes/_menu_lista.html" %}
+  </nav>
+  <div class="sb-foot">
+    <button type="button" class="only-desktop" x-on:click="alternar()" x-bind:aria-pressed="collapsed" aria-pressed="{% if request.COOKIES.dd_menu == '1' %}true{% else %}false{% endif %}" aria-label="Contraer menú" title="Contraer menú">
+      <c-icono nombre="panel-left-close" /><span class="lbl">Contraer menú</span>
+    </button>
+    <div class="user">
+      <span class="ava" aria-hidden="true">{{ request.user.get_username|slice:":2"|upper }}</span>
+      <span class="who"><b class="font-medium">{{ request.user.get_full_name|default:request.user.get_username }}</b><small>{% if request.user.role == "administrator" %}Administrador{% elif request.user.role == "operator" %}Operador{% else %}Profesional{% endif %}</small></span>
+    </div>
+    <form method="post" action="{% url 'usuarios:logout' %}">
+      {% csrf_token %}
+      <button type="submit" title="Salir"><c-icono nombre="log-out" /><span class="lbl">Salir</span></button>
+    </form>
+  </div>
+</aside>

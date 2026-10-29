@@ -1,0 +1,1 @@
+{% if e %}{{ e.0|date:"d/m/Y H:i" }} · {% if e.1 == "Error" %}<span class="text-err">Error</span>{% else %}{{ e.1 }}{% endif %}{% else %}Nunca{% endif %}

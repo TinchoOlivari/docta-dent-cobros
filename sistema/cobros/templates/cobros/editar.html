@@ -1,0 +1,86 @@
+{% extends "sistema/base.html" %}
+{% load pesos %}
+{% block title %}Editar cobro {{ cobro.pk }}{% endblock %}
+{% block migas %}<li><a href="{% url 'cobros:lista' %}">Cobros</a></li><li><a href="{% url 'cobros:detalle' cobro.pk %}">Cobro {{ cobro.pk }}</a></li><li><span aria-current="page">Editar</span></li>{% endblock %}
+{% block titulo %}Editar cobro {{ cobro.pk }}{% endblock %}
+{% block acciones %}<c-boton href="{% url 'cobros:detalle' cobro.pk %}" icono="arrow-left">Volver al cobro</c-boton>{% endblock %}
+{% block content %}
+<form method="post" enctype="multipart/form-data" data-sin-foco class="flex max-w-3xl flex-col gap-4" x-data="{% if form.fields.metodo %}segunMetodo('[name=metodo]'){% else %}{ metodo: '{{ cobro.metodo }}' }{% endif %}">
+  {% csrf_token %}
+  {{ form.estado_visto }}
+  {% if form.non_field_errors %}
+  <c-alerta nivel="error" titulo="No se pudo guardar.">{% for e in form.non_field_errors %}{{ e }} {% endfor %}</c-alerta>
+  {% endif %}
+  <c-tarjeta titulo="Datos del cobro">
+    {% include "cobros/_campo.html" with campo=form.fecha %}
+    {% include "cobros/_campo.html" with campo=form.monto monto=True %}
+    {% if form.fields.metodo %}
+    {% include "cobros/_campo.html" with campo=form.metodo %}
+    {% else %}
+    <div class="field">
+      <p class="lbl-f">Método de cobro</p>
+      <p class="font-medium">{{ cobro.get_metodo_display }}</p>
+      <p class="hint">Para cambiar el método, cancelá el cobro con «Se cobró por otro medio» y creá otro.</p>
+    </div>
+    {% endif %}
+    <div x-data="{ n: {{ form.observaciones.value|default_if_none:''|length }} }" x-on:input="n = $event.target.value.length">
+      {% include "cobros/_campo.html" with campo=form.observaciones %}
+      <p data-contador class="hint tabular-nums"><span x-text="n.toLocaleString('es-AR')">{{ form.observaciones.value|default_if_none:''|length }}</span>/1.000</p>
+    </div>
+  </c-tarjeta>
+  <fieldset id="bloque-cuenta" class="m-0 min-w-0 border-0 p-0" x-show="metodo === '' || metodo === 'transferencia'" x-bind:disabled="metodo !== '' && metodo !== 'transferencia'">
+    <c-tarjeta titulo="Cuenta destino">
+      {% include "cobros/_campo.html" with campo=form.cuenta %}
+    </c-tarjeta>
+  </fieldset>
+  <fieldset id="bloque-pos" class="m-0 min-w-0 border-0 p-0" x-show="metodo === '' || ['debito', 'credito', 'qr', 'link'].includes(metodo)" x-bind:disabled="metodo !== '' &amp;&amp; !['debito', 'credito', 'qr', 'link'].includes(metodo)">
+    <c-tarjeta titulo="Datos del POS">
+      {% include "cobros/_campo.html" with campo=form.terminal %}
+      {% include "cobros/_campo.html" with campo=form.monto_neto monto=True %}
+      {% include "cobros/_campo.html" with campo=form.numero_operacion %}
+      <div id="bloque-tarjeta" x-show="metodo === '' || metodo === 'debito' || metodo === 'credito'">
+        {% include "cobros/_campo.html" with campo=form.banco_emisor %}
+        {% include "cobros/_campo.html" with campo=form.ultimos_4 %}
+      </div>
+    </c-tarjeta>
+  </fieldset>
+  <c-tarjeta titulo="Comprobante">
+    <c-comprobantes :campo="form.comprobante" />
+  </c-tarjeta>
+
+  {% if form.filas %}
+  <c-tarjeta titulo="Ítems">
+    <c-tabla titulo_accesible="Ítems del cobro">
+      <thead><tr><th scope="col">N°</th><th scope="col">Prestación</th><th scope="col" class="col-monto">Monto</th><th scope="col">Profesional</th></tr></thead>
+      <tbody>
+        {% for fila in form.filas %}
+        <tr>
+          <td class="whitespace-nowrap tabular-nums">{{ fila.item.referencia }}</td>
+          <td>{{ fila.item.nombre_prestacion }}</td>
+          <td class="col-monto"><div data-monto class="tabular-nums">{{ fila.monto }}</div>{% for e in fila.monto.errors %}<p class="err-msg" role="alert">{{ e }}</p>{% endfor %}</td>
+          <td>{{ fila.profesional }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </c-tabla>
+  </c-tarjeta>
+  {% endif %}
+  {% if form.hay_dentalink %}
+  <c-tarjeta titulo="Agregar un ítem">
+    {% include "cobros/_campo.html" with campo=form.nuevo_prestacion %}
+    {% include "cobros/_campo.html" with campo=form.nuevo_monto monto=True %}
+    {% include "cobros/_campo.html" with campo=form.nuevo_profesional %}
+  </c-tarjeta>
+  {% endif %}
+  {% if factura_emitida %}
+  <c-alerta nivel="warning" titulo="Factura emitida.">
+    <fieldset id="pregunta-nota-credito">
+      <legend class="font-medium">Este cobro tiene una factura emitida por {{ factura_emitida.total|pesos }}. Si cambiás el monto o el destinatario, ¿emitir nota de crédito?</legend>
+      <label class="flex min-h-[44px] items-center gap-2"><input type="radio" name="nota_credito" value="si"> Sí</label>
+      <label class="flex min-h-[44px] items-center gap-2"><input type="radio" name="nota_credito" value="no"> No</label>
+    </fieldset>
+  </c-alerta>
+  {% endif %}
+  <c-pie-form cancelar="{% url 'cobros:detalle' cobro.pk %}" boton="Guardar cambios" />
+</form>
+{% endblock %}

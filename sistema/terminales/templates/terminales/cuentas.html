@@ -1,0 +1,43 @@
+{% extends "sistema/base.html" %}
+{% load pesos ui %}
+{% block title %}Cuentas de terminal POS{% endblock %}
+{% block migas %}<li><a href="{% url 'terminales:lista' %}">Terminales POS</a></li><li aria-current="page">Cuentas</li>{% endblock %}
+{% block titulo %}Cuentas de terminal POS{% endblock %}
+{% block subtitulo %}Lo acumulado de cada cuenta frente a su objetivo.{% endblock %}
+{% block content %}
+<section class="card2">
+  <c-tabla titulo_accesible="Cuentas de terminal POS">
+    <thead>
+      <tr>
+        <th>Destinatario</th><th class="col-sec max-lg:hidden">Estado</th><th class="col-sec col-monto max-lg:hidden">Objetivo</th><th>Acumulado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in cuentas %}
+      <tr>
+        <td>
+          <span class="font-medium">{{ c }}</span>
+          <span class="block text-sm text-ink-3">{{ c.proveedor }}<span class="lg:hidden"> · {{ c.get_estado_display }} · Objetivo {{ c.objetivo|pesos }}</span></span>
+          <a class="text-sm text-brand-ink underline" href="{% url 'auditoria:historial' 'destinatarios.cuenta' c.pk %}">Historial</a>
+        </td>
+        <td class="col-sec max-lg:hidden">{% badge c.estado c.get_estado_display %}</td>
+        <td class="col-sec col-monto max-lg:hidden">{{ c.objetivo|pesos }}</td>
+        <td class="md:min-w-72">
+          {% barra c.acumulado c.objetivo etiqueta="Avance del objetivo de "|add:c.destinatario.nombre %}
+          <p class="mt-1 text-sm tabular-nums text-ink-3">Acumula desde {{ c.acumula_desde|date:"d/m/Y H:i:s" }}</p>
+          <form method="post" action="{% url 'terminales:acumula_desde' c.pk %}" id="reiniciar-{{ c.pk }}" class="mt-2 flex flex-wrap items-center gap-2" data-sin-foco x-data>
+            {% csrf_token %}
+            <div role="group" aria-label="Acumula desde" class="flex flex-wrap gap-2">{{ c.form_desde.fecha }}</div>
+            <c-boton variante="secundario" tipo="button" hidden x-bind:hidden="false" x-on:click="$el.form.elements.fecha_0.value = $el.form.elements.fecha_0.type === 'date' ? '{{ ahora|date:'Y-m-d' }}' : '{{ ahora|date:'d/m/Y' }}'; $el.form.elements.fecha_1.value = '{{ ahora|date:'H:i' }}'">Desde ahora</c-boton>
+            <c-boton variante="secundario" form="reiniciar-{{ c.pk }}" data-confirmar-form="reiniciar-{{ c.pk }}" data-confirmar-dialogo="confirmar-{{ c.pk }}">Reiniciar</c-boton>
+          </form>
+          <c-confirmar id="confirmar-{{ c.pk }}" titulo="Reiniciar acumulado" texto="El acumulado de esta cuenta vuelve a contar desde la fecha elegida." boton="Reiniciar" />
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4"><c-vacio texto="Todavía no hay cuentas de terminal POS." /></td></tr>
+      {% endfor %}
+    </tbody>
+  </c-tabla>
+</section>
+{% endblock %}

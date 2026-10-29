@@ -1,0 +1,204 @@
+{% extends "sistema/base.html" %}
+{% load ui pesos %}
+{% block title %}Catálogo de componentes{% endblock %}
+{% block migas %}<li aria-current="page">Catálogo</li>{% endblock %}
+{% block titulo %}Catálogo de componentes{% endblock %}
+{% block subtitulo %}Los componentes en sus estados. Pantalla de desarrollo.{% endblock %}
+{% block content %}
+<div class="flex flex-col gap-6">
+
+  <c-tarjeta titulo="Botón">
+    <div class="flex flex-wrap items-center gap-2">
+      <c-boton variante="primario" tipo="button">Primario</c-boton>
+      <c-boton variante="secundario" tipo="button">Secundario</c-boton>
+      <c-boton variante="peligro" tipo="button">Peligro</c-boton>
+      <c-boton variante="fantasma" tipo="button">Fantasma</c-boton>
+      <c-boton variante="primario" tipo="button" icono="plus">Con ícono</c-boton>
+      <c-boton variante="secundario" tipo="button" icono="copy" etiqueta="Copiar CBU" />
+      <c-boton variante="secundario" href="#" icono="arrow-left">Como enlace</c-boton>
+    </div>
+    <p class="hint">Estados: deshabilitado, enviando y foco (con Tab).</p>
+    <div class="mt-2 flex flex-wrap items-center gap-2">
+      <c-boton variante="primario" tipo="button" deshabilitado>Deshabilitado</c-boton>
+      <button type="button" class="btn btn-primary" disabled>Enviando <span aria-hidden="true"><c-icono nombre="loader-circle" clase="size-4 animate-spin" /></span></button>
+    </div>
+  </c-tarjeta>
+
+  <c-tarjeta titulo="Campo">
+    <div class="grid gap-x-6 md:grid-cols-2">
+      <div>
+        <p class="hint mb-2">Normal, con ayuda, monto y deshabilitado</p>
+        <c-campo :campo="form.nombre" />
+        <c-campo :campo="form.monto" monto />
+        <c-campo :campo="form.bloqueado" />
+      </div>
+      <div>
+        <p class="hint mb-2">Con error (aria-invalid y aria-describedby)</p>
+        <c-campo :campo="form_error.nombre" />
+        <c-campo :campo="form_error.monto" monto />
+      </div>
+    </div>
+  </c-tarjeta>
+
+  <c-tarjeta titulo="Tarjeta">
+    <c-tarjeta titulo="Tarjeta con acciones" nivel="3">
+      <c-slot name="acciones"><c-boton variante="secundario" tipo="button">Acción</c-boton></c-slot>
+      Contenido de la tarjeta.
+    </c-tarjeta>
+  </c-tarjeta>
+
+  <c-tarjeta titulo="Badge de estado y barra de tope">
+    <div class="flex flex-wrap gap-2">
+      {% for valor, texto in badges %}{% badge valor texto %}{% endfor %}
+    </div>
+    <div class="mt-4 grid gap-4 md:grid-cols-2">
+      <div><p class="hint">$0,00 de $1.000.000,00</p>{% barra "0" "1000000" %}</div>
+      <div><p class="hint">$999.999,99</p>{% barra "999999.99" "1000000" %}</div>
+      <div><p class="hint">$1.000.000,00</p>{% barra "1000000" "1000000" %}</div>
+      <div><p class="hint">$1.000.000,01 (excedido)</p>{% barra "1000000.01" "1000000" %}</div>
+    </div>
+    <div class="mt-4 grid gap-4 md:grid-cols-3" id="demo-tonos">
+      <div><p class="hint">$500.000,00 de $1.000.000,00</p>{% barra "500000" "1000000" texto=False %}</div>
+      <div><p class="hint">$850.000,00 de $1.000.000,00</p>{% barra "850000" "1000000" texto=False %}</div>
+      <div><p class="hint">$990.000,00 de $1.000.000,00</p>{% barra "990000" "1000000" texto=False %}</div>
+    </div>
+  </c-tarjeta>
+
+  <c-tarjeta titulo="Tabla y paginación">
+    <c-tabla titulo_accesible="Ejemplo de tabla">
+      <thead><tr><th>Paciente</th><th class="col-sec">Método</th><th>Estado</th><th class="col-monto">Monto</th></tr></thead>
+      <tbody>
+        <tr><td>Paciente de prueba 1<span class="sub-movil">Efectivo</span></td><td class="col-sec">Efectivo</td><td>{% badge "pendiente" "Pendiente" %}</td><td class="col-monto">$999,99</td></tr>
+        <tr><td><span class="block max-w-[7ch] truncate md:max-w-[28ch]" title="Paciente de prueba con un nombre muy largo que se corta con puntos suspensivos en la celda">Paciente de prueba con un nombre muy largo que se corta con puntos suspensivos en la celda</span><span class="sub-movil">Transferencia</span></td><td class="col-sec">Transferencia</td><td>{% badge "finalizado" "Finalizado" %}</td><td class="col-monto">$1.111.111,11</td></tr>
+        <tr><td>Paciente de prueba 3<span class="sub-movil">Débito</span></td><td class="col-sec">Débito</td><td>{% badge "cancelado" "Cancelado" %}</td><td class="col-monto">$999.999.999,99</td></tr>
+      </tbody>
+    </c-tabla>
+    <c-paginacion :pagina="pagina" query="estado=pendiente" />
+  </c-tarjeta>
+
+  <c-tarjeta titulo="Tabla compacta y monto corto">
+    <c-tabla compacta id="demo-compacta" titulo_accesible="Ejemplo de tabla compacta">
+      <thead><tr><th>Paciente</th><th class="col-monto">Monto</th></tr></thead>
+      <tbody>
+        <tr><td><a href="#" class="link">Paciente de prueba 1</a></td><td class="col-monto">{{ "150000.00"|monto_corto }}</td></tr>
+        <tr><td>Paciente de prueba 2</td><td class="col-monto">{{ "150000.50"|monto_corto }}</td></tr>
+        <tr><td>Paciente de prueba 3</td><td class="col-monto">{{ "0.01"|monto_corto }}</td></tr>
+        <tr><td>Paciente de prueba 4</td><td class="col-monto">{{ "0.00"|monto_corto }}</td></tr>
+      </tbody>
+    </c-tabla>
+  </c-tarjeta>
+
+  <c-tarjeta titulo="Ayuda (i)">
+    <div class="flex items-center gap-2">
+      <span>Nombre o DNI</span>
+      <c-ayuda tema="Nombre o DNI" texto="Buscá en Dentalink por apellido, nombre o DNI." />
+    </div>
+    <div class="mt-4"><c-campo :campo="form_ayuda.nombre" info="Texto de ayuda de ejemplo." /></div>
+    <div class="mt-4"><c-casilla :campo="form_ayuda.casilla" /></div>
+    <div class="mt-4 flex justify-end"><c-ayuda tema="Ayuda al borde derecho" texto="Este panel crece hacia la izquierda." lado="fin" /></div>
+  </c-tarjeta>
+
+  <c-tarjeta titulo="Combobox con búsqueda y calendario">
+    <div class="grid gap-x-6 md:grid-cols-2">
+      <div class="field">
+        <label for="demo-combo" class="lbl-f">Destinatario</label>
+        <select id="demo-combo" name="destinatario" class="select">
+          <option value="">Todos</option>
+          <option value="1">Ejemplo uno</option>
+          <option value="2">Ejemplo dos</option>
+          <option value="3">Ñandú</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="demo-fecha" class="lbl-f">Desde</label>
+        <input id="demo-fecha" name="desde" type="date" class="input">
+      </div>
+    </div>
+  </c-tarjeta>
+
+  <c-tarjeta titulo="Menú con botón y elegir todos">
+    <div x-data="seleccion" class="flex flex-wrap items-center gap-4" id="demo-seleccion">
+      <c-menu texto="Acciones" contador="n" deshabilitado="n === 0" lado="fin">
+        <li><button type="button">Acción de ejemplo</button></li>
+      </c-menu>
+      <c-menu icono="ellipsis" etiqueta="Acciones de Destinatario Ejemplo 1" lado="fin">
+        <li><a href="#">Ver ejemplo</a></li>
+        <li><button type="button">Otra acción</button></li>
+      </c-menu>
+      <c-elegir-todos texto="Elegir todos" />
+      <label class="celda-casilla"><input type="checkbox" name="pk" value="1" aria-label="Elegir ejemplo 1"></label>
+      <label class="celda-casilla"><input type="checkbox" name="pk" value="2" aria-label="Elegir ejemplo 2"></label>
+      <label class="celda-casilla"><input type="checkbox" name="pk" value="3" aria-label="Elegir ejemplo 3"></label>
+    </div>
+  </c-tarjeta>
+
+  <c-tarjeta titulo="Errores en línea y buscador">
+    <form id="demo-errores" method="get" action="" class="grid gap-x-6 md:grid-cols-2">
+      <div class="field">
+        <label for="demo-obligatorio" class="lbl-f">Obligatorio</label>
+        <input id="demo-obligatorio" name="obligatorio" class="input" required>
+      </div>
+      <div class="field">
+        <label for="demo-ultimos" class="lbl-f">Últimos 4 dígitos</label>
+        <input id="demo-ultimos" name="ultimos" class="input" pattern="\d{4}" data-mensaje="Escribí los 4 dígitos.">
+      </div>
+      <div class="field">
+        <label for="demo-elegir" class="lbl-f">Elegir</label>
+        <select id="demo-elegir" name="elegir" class="select" required>
+          <option value="">Elegí…</option>
+          <option value="1">Uno</option>
+        </select>
+      </div>
+      <div class="field md:col-span-2"><c-boton variante="primario">Enviar</c-boton></div>
+    </form>
+    <form id="demo-buscador" role="search" method="get" action="" x-data="buscador" class="flex items-start gap-2">
+      <div class="min-w-0 flex-1">
+        <label for="q" class="lbl-f">Nombre o DNI</label>
+        <input id="q" name="q" type="search" class="input" x-model="q" data-sin-foco>
+      </div>
+      <div class="pt-8"><c-boton variante="primario" icono="search" x-bind:disabled="vacio">Buscar</c-boton></div>
+    </form>
+  </c-tarjeta>
+
+  <c-tarjeta titulo="Diálogo de confirmación" x-data="{ n: 0 }">
+    <c-boton variante="peligro" tipo="button" x-on:click="abrirConfirmar('demo-confirmar', () => n++)">Abrir diálogo</c-boton>
+    <p class="hint">Confirmaciones: <span id="demo-confirmados" x-text="n">0</span></p>
+    <c-confirmar id="demo-confirmar" titulo="¿Cancelar el cobro?" texto="Esta acción no se puede deshacer." boton="Cancelar cobro">
+      <p class="hint">El cuerpo del diálogo admite campos extra, por ejemplo un motivo.</p>
+    </c-confirmar>
+  </c-tarjeta>
+
+  <c-tarjeta titulo="Aviso, alerta y vacío">
+    <div class="flex flex-col gap-2">
+      <c-aviso nivel="success">Cobro guardado.</c-aviso>
+      <c-aviso nivel="error">No hay cuenta disponible. Cobrá con otro método de cobro.</c-aviso>
+      <c-aviso nivel="warning">Aviso de ejemplo.</c-aviso>
+      <c-aviso nivel="info">Información de ejemplo.</c-aviso>
+    </div>
+    <div class="mt-4 flex flex-col gap-2">
+      <c-alerta nivel="error" titulo="Error.">Revisá los campos marcados.</c-alerta>
+      <c-alerta nivel="warning">Advertencia sin título.</c-alerta>
+      <c-alerta nivel="info">Información en línea.</c-alerta>
+      <c-alerta nivel="success">Todo en orden.</c-alerta>
+    </div>
+    <div class="mt-4">
+      <c-vacio texto="No hay cobros.">
+        <c-slot name="accion"><c-boton variante="primario" href="#" icono="plus">Nuevo cobro</c-boton></c-slot>
+      </c-vacio>
+    </div>
+  </c-tarjeta>
+
+  <c-tarjeta titulo="Comprobantes">
+    <c-comprobantes :campo="form.comprobante" multiple />
+  </c-tarjeta>
+
+  <c-tarjeta titulo="Ícono y cargando">
+    <div class="flex flex-wrap items-center gap-4">
+      <c-icono nombre="receipt" clase="size-8" />
+      <c-icono nombre="landmark" clase="size-6" etiqueta="Banco" />
+      <span class="htmx-request flex items-center gap-2"><span class="htmx-indicator"><c-icono nombre="loader-circle" clase="size-5 animate-spin" /></span> Cargando (aparece a los 300 ms)</span>
+    </div>
+  </c-tarjeta>
+
+</div>
+{% endblock %}

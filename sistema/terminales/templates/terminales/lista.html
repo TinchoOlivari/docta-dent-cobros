@@ -1,0 +1,29 @@
+{% extends "sistema/base.html" %}
+{% load ui %}
+{% block title %}Terminales POS{% endblock %}
+{% block migas %}<li aria-current="page">Terminales POS</li>{% endblock %}
+{% block titulo %}Terminales POS{% endblock %}
+{% block subtitulo %}Los equipos de cobro y la cuenta que usa cada uno.{% endblock %}
+{% block acciones %}
+  <c-boton variante="primario" href="{% url 'terminales:nueva' %}" icono="plus">Nueva terminal</c-boton>
+{% endblock %}
+{% block content %}
+<section class="card2">
+  <c-tabla titulo_accesible="Terminales POS">
+    <thead><tr><th>Nombre</th><th class="col-sec">Proveedor</th><th class="col-sec">Métodos</th><th>Estado</th><th class="col-sec">Cuenta de la sesión abierta</th></tr></thead>
+    <tbody>
+      {% for t in terminales %}
+      <tr>
+        <td><a class="font-medium text-brand-ink underline" href="{% url 'terminales:detalle' t.pk %}">{{ t.nombre }}</a><span class="sub-movil">{{ t.proveedor }}</span></td>
+        <td class="col-sec">{{ t.proveedor }}</td>
+        <td class="col-sec">Métodos: {{ t.metodos_texto|default:"—" }}</td>
+        <td>{% badge t.estado t.get_estado_display %}</td>
+        <td class="col-sec">{% for s in t.abiertas %}{{ s.cuenta.destinatario }} — {{ s.cuenta.titular }}{% empty %}—{% endfor %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5"><c-vacio texto="Todavía no hay terminales."><c-slot name="accion"><c-boton variante="primario" href="{% url 'terminales:nueva' %}" icono="plus">Nueva terminal</c-boton></c-slot></c-vacio></td></tr>
+      {% endfor %}
+    </tbody>
+  </c-tabla>
+</section>
+{% endblock %}

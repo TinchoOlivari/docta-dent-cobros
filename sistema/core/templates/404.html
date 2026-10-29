@@ -1,0 +1,9 @@
+{% extends "sistema/base.html" %}
+{% block title %}No encontrado{% endblock %}
+{% block titulo %}No encontramos esa página{% endblock %}
+{% block content %}
+  <c-tarjeta>
+    <p class="mb-4">La página no existe o ya no está disponible. Revisá la dirección o volvé al inicio.</p>
+    <c-boton href="{% url 'usuarios:inicio' %}" variante="secundario">Volver al inicio</c-boton>
+  </c-tarjeta>
+{% endblock %}

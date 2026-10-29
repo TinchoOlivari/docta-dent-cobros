@@ -1,0 +1,19 @@
+{% load pesos ui %}
+  <section class="card2" aria-labelledby="h-datos">
+    <div class="hd"><h2 id="h-datos">Datos del cobro</h2></div>
+    <div class="bd2">
+      <dl class="kv">
+        <div><dt>Monto</dt><dd class="text-2xl font-semibold tabular-nums">{{ cobro.monto|pesos }}</dd></div>
+        <div><dt>Paciente</dt><dd>{{ cobro.nombre_paciente }}</dd></div>
+        <div><dt>Método</dt><dd>{{ cobro.get_metodo_display }}</dd></div>
+        <div><dt>Fecha</dt><dd class="tabular-nums">{{ cobro.fecha|date:"d/m/Y H:i" }}</dd></div>
+        {% if cobro.terminal %}<div><dt>Terminal</dt><dd>{{ cobro.terminal.nombre }}</dd></div>{% endif %}
+        {% if es_admin and ver_cuenta %}
+        <div><dt>Cuenta</dt><dd>{{ cobro.cuenta }}</dd></div>
+        <div><dt>Destinatario</dt><dd>{{ cobro.destinatario|default:"—" }}</dd></div>
+        {% endif %}
+        {% if cobro.motivo_cancelacion %}<div class="sm:col-span-2"><dt>Cancelación</dt><dd>{{ cobro.get_motivo_cancelacion_display }}{% if cobro.detalle_cancelacion %}: {{ cobro.detalle_cancelacion }}{% endif %}</dd></div>{% endif %}
+      </dl>
+    </div>
+  </section>
+

@@ -1,0 +1,19 @@
+[tool.ruff]
+line-length = 100
+extend-exclude = ["venv", "staticfiles", "media", "**/migrations/*", "auditoria-ux"]
+
+[tool.ruff.lint.per-file-ignores]
+"sistema/**/tests/*.py" = ["F841"]
+# Los módulos de settings usan `from .base import *`. Es el idioma de Django.
+# E402: base.py registra un receiver de señal después de definir constantes.
+"payment_system/settings/*.py" = ["E402", "F403", "F405"]
+# Los tests asignan a una variable el objeto que crean y después no la usan.
+# La creación es el efecto buscado. Borrar la asignación es un fix "unsafe":
+# ruff no puede saber si también borra la llamada.
+"payment_instructions/tests/*.py" = ["F841"]
+
+# djlint (016, research P13): entiende los tags <c-...> de cotton. Solo se usa --lint, nunca --reformat.
+# H021: ancho de la barra de tope. H025: el botón/enlace de <c-boton> abre en dos ramas. H026: <c-vars id="">. H043: submit por defecto.
+[tool.djlint]
+profile = "django"
+ignore = "H021,H025,H026,H043,D018"

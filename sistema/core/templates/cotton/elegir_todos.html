@@ -1,0 +1,7 @@
+<c-vars form="" texto="" />
+{# Casilla de "Elegir todos los visibles" (023/FR-003). Va dentro de un elemento con x-data="seleccion". #}
+<span class="inline-flex items-center gap-1" x-show="hay > 0" style="display:none">
+  <label class="celda-casilla"><input type="checkbox"{% if form %} form="{{ form }}"{% endif %} aria-label="Elegir todos los visibles"
+    x-effect="$el.checked = todos === 'todos'; $el.indeterminate = todos === 'algunos'" x-on:change="elegirTodos()"></label>
+  {% if texto %}<span class="text-sm">{{ texto }}</span>{% endif %}
+</span>

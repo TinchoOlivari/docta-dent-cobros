@@ -1,0 +1,18 @@
+{% extends "sistema/base.html" %}
+{% block title %}Recibido vs. esperado{% endblock %}
+{% block migas %}{% if request.user.role == "professional" %}<li><a href="{% url 'usuarios:profesional' %}">Mis ítems</a></li>{% else %}<li><a href="{% url 'cobros:lista' %}">Cobros</a></li>{% endif %}<li><span aria-current="page">Recibido vs. esperado</span></li>{% endblock %}
+{% block titulo %}Recibido vs. esperado — {{ reporte.destinatario.nombre }}{% endblock %}
+{% block subtitulo %}Lo recibido en el mes frente al objetivo de cada cuenta.{% endblock %}
+{% block acciones %}<c-boton href="{% if request.user.role == 'professional' %}{% url 'usuarios:profesional' %}{% else %}{% url 'cobros:lista' %}{% endif %}" icono="arrow-left">Volver</c-boton>{% endblock %}
+{% block content %}
+<c-tarjeta>
+  <div class="p-6 max-[479.98px]:p-4">
+    <form method="get" class="filtros" role="search">
+      <div class="field !mb-0"><label for="f-mes" class="lbl-f">Mes</label>
+        <input class="input" id="f-mes" type="month" name="mes" value="{{ mes|date:'Y-m' }}" max="{{ corriente|date:'Y-m' }}"></div>
+      <c-boton variante="primario">Ver</c-boton>
+    </form>
+  </div>
+  {% include "reportes/_reporte.html" %}
+</c-tarjeta>
+{% endblock %}

@@ -1,0 +1,5 @@
+{% comment %}FR-037. `cert`: vencido, hoy, por_vencer o vacío. `corto`: versión de la lista.{% endcomment %}
+{% if cert == "vencido" %}<span class="inline-flex items-center gap-1 font-semibold text-error"><c-icono nombre="triangle-alert" clase="size-4" />{% if corto %}{{ vence|date:"d/m/Y" }} (vencido){% else %}Certificado vencido el {{ vence|date:"d/m/Y" }}{% endif %}</span>
+{% elif cert == "hoy" %}<span class="inline-flex items-center gap-1 font-semibold text-warning"><c-icono nombre="triangle-alert" clase="size-4" />{% if corto %}{{ vence|date:"d/m/Y" }} (vence hoy){% else %}Certificado cargado, vence hoy{% endif %}</span>
+{% elif cert == "por_vencer" %}<span class="inline-flex items-center gap-1 font-semibold text-error"><c-icono nombre="triangle-alert" clase="size-4" />{% if corto %}{{ vence|date:"d/m/Y" }} (por vencer){% else %}Certificado cargado, vence el {{ vence|date:"d/m/Y" }} (por vencer){% endif %}</span>
+{% else %}{% if corto %}{{ vence|date:"d/m/Y" }}{% else %}Certificado cargado, vence el {{ vence|date:"d/m/Y" }}{% endif %}{% endif %}

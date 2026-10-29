@@ -1,0 +1,37 @@
+{% extends "sistema/base.html" %}
+{% load pesos %}
+{% block title %}Paciente{% endblock %}
+{% block migas %}<li><a href="{% url 'dentalink:pacientes' %}">Buscar paciente</a></li><li><span aria-current="page">Prestaciones</span></li>{% endblock %}
+{% block titulo %}Prestaciones a cobrar{% endblock %}
+{% block subtitulo %}{% if nombre_paciente %}{{ nombre_paciente }}{% else %}Paciente N.º {{ request.resolver_match.kwargs.id_paciente }}{% endif %}{% if dni_paciente or nacimiento_paciente or nombre_paciente %}<span class="block text-sm text-ink-3 tabular-nums">{% if dni_paciente %}DNI {{ dni_paciente }}{% else %}Sin DNI{% endif %}{% if nacimiento_paciente %} · Nac. {{ nacimiento_paciente|date:"d/m/Y" }}{% endif %}</span>{% endif %}{% endblock %}
+{% block acciones %}
+<c-boton href="{% url 'dentalink:pacientes' %}" variante="secundario" icono="search">Buscar otro paciente</c-boton>
+{% if tratamientos %}<c-boton href="{% url 'cobros:nuevo' %}?paciente={{ request.resolver_match.kwargs.id_paciente }}" variante="primario" icono="plus">Cobrar a este paciente</c-boton>{% endif %}
+{% endblock %}
+{% block content %}
+<div class="space-y-4">
+{% if no_disponible %}<c-alerta nivel="warning">Dentalink no está disponible. Volvé a intentar en unos minutos.</c-alerta>{% endif %}
+{% for t in tratamientos %}
+<section class="card2" aria-labelledby="t-{{ forloop.counter }}">
+  <div class="hd"><h2 id="t-{{ forloop.counter }}">#{{ t.id }}{% if t.nombre %}: {{ t.nombre }}{% endif %}</h2></div>
+  <c-tabla titulo_accesible="Prestaciones del tratamiento #{{ t.id }}">
+    <thead><tr><th scope="col">Prestación</th><th scope="col" class="col-sec col-monto">Total</th><th scope="col" class="col-sec col-monto">Pagado</th><th scope="col" class="col-monto">Saldo</th><th scope="col" class="col-sec">Profesional propuesto</th><th scope="col" class="col-sec max-lg:hidden">Profesionales</th></tr></thead>
+    <tbody>
+      {% for p in t.prestaciones %}
+      <tr>
+        <td>{{ p.nombre }}{% if p.saldo_a_favor %} (saldo a favor){% endif %}<small class="sub-movil">{{ p.profesional_propuesto.nombre }} · Total {{ p.total|pesos }} · Pagado {{ p.pagado|pesos }}</small></td>
+        <td class="col-sec col-monto whitespace-nowrap">{{ p.total|pesos }}</td>
+        <td class="col-sec col-monto whitespace-nowrap">{{ p.pagado|pesos }}</td>
+        <td class="col-monto whitespace-nowrap font-medium">{{ p.saldo|pesos }}</td>
+        <td class="col-sec">{{ p.profesional_propuesto.nombre }}</td>
+        <td class="col-sec max-lg:hidden">{% for x in p.profesionales %}{{ x.nombre }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </c-tabla>
+</section>
+{% empty %}
+{% if not no_disponible %}<c-vacio texto="No hay prestaciones con saldo para cobrar." />{% endif %}
+{% endfor %}
+</div>
+{% endblock %}

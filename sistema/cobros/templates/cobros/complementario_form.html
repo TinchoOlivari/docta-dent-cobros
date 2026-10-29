@@ -1,0 +1,42 @@
+{% extends "sistema/base.html" %}
+{% load pesos %}
+{% block title %}{% if pago %}Editar pago complementario {{ pago.pk }}{% else %}Registrar pago complementario{% endif %}{% endblock %}
+{% block migas %}<li><a href="{% url 'cobros:complementarios' %}">Pagos complementarios</a></li>{% if pago %}<li><a href="{% url 'cobros:complementario_detalle' pago.pk %}">Pago {{ pago.pk }}</a></li><li><span aria-current="page">Editar</span></li>{% else %}<li><span aria-current="page">Registrar pago</span></li>{% endif %}{% endblock %}
+{% block titulo %}{% if pago %}Editar pago complementario {{ pago.pk }}{% else %}Registrar pago complementario{% endif %}{% endblock %}
+{% block acciones %}{% if pago %}<c-boton href="{% url 'cobros:complementario_detalle' pago.pk %}" icono="arrow-left">Volver al pago</c-boton>{% else %}<c-boton href="{% url 'cobros:complementarios' %}" icono="arrow-left">Pagos complementarios</c-boton>{% endif %}{% endblock %}
+{% block content %}
+<form method="post" enctype="multipart/form-data" {% if pago %}data-sin-foco {% endif %}class="flex max-w-2xl flex-col gap-4" x-data="segunMetodo('[name=metodo]')">
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+  <c-alerta nivel="error" titulo="No se pudo guardar.">{% for e in form.non_field_errors %}{{ e }} {% endfor %}</c-alerta>
+  {% endif %}
+  <c-tarjeta titulo="Pago">
+    <div x-data="{ falta: true }" x-on:change="if (['destinatario', 'mes'].includes($event.target.name)) falta = false">
+    {% include "cobros/_campo.html" with campo=form.destinatario %}
+    {% include "cobros/_campo.html" with campo=form.mes %}
+    {% include "cobros/_campo.html" with campo=form.monto monto=True %}
+    {% if falta is not None %}<p data-falta x-show="falta" class="hint tabular-nums">Falta del mes: {{ falta|pesos }}</p>{% endif %}
+    </div>
+    {% include "cobros/_campo.html" with campo=form.metodo %}
+    <fieldset id="bloque-cuenta" class="m-0 min-w-0 border-0 p-0" x-show="metodo === '' || metodo === 'transferencia'" x-bind:disabled="metodo !== '' &amp;&amp; metodo !== 'transferencia'"
+      x-data="{ filtrar(d) {
+        const s = $el.querySelector('select');
+        const op = [...s.options].filter(o => o.value);
+        op.forEach(o => { const ok = !!d &amp;&amp; o.dataset.destinatario === d; o.hidden = !ok; o.disabled = !ok; });
+        if (s.value &amp;&amp; s.selectedOptions[0].disabled) s.value = '';
+        const ok = op.filter(o => !o.disabled);
+        if (!s.value &amp;&amp; ok.length === 1) s.value = ok[0].value;
+        window.sincronizarSelect(s);
+      } }"
+      x-init="filtrar(document.querySelector('[name=destinatario]').value)"
+      x-on:change.document="if ($event.target.name === 'destinatario') filtrar($event.target.value)">
+      {% include "cobros/_campo.html" with campo=form.cuenta %}
+    </fieldset>
+    {% include "cobros/_campo.html" with campo=form.observaciones %}
+  </c-tarjeta>
+  <c-tarjeta titulo="Comprobante">
+    <div class="[&_.lbl-f]:sr-only"><c-comprobantes :campo="form.comprobante" /></div>
+  </c-tarjeta>
+  <c-pie-form cancelar="{% if pago %}{% url 'cobros:complementario_detalle' pago.pk %}{% else %}{% url 'cobros:complementarios' %}{% endif %}" />
+</form>
+{% endblock %}

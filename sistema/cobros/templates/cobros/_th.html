@@ -1,0 +1,7 @@
+{# Encabezado ordenable. Recibe `campo`, `titulo` y `clase`. Usa `orden` y `query_sin_orden` del contexto. #}
+<th scope="col" class="{{ clase }}"{% if orden == campo %} aria-sort="ascending"{% elif orden == "-"|add:campo %} aria-sort="descending"{% endif %}>
+  <span class="inline-flex items-center">
+    <a class="link inline-flex min-h-[44px] items-center" href="?{% if query_sin_orden %}{{ query_sin_orden }}&amp;{% endif %}orden={% if orden == campo %}-{% endif %}{{ campo }}"
+       hx-get="?{% if query_sin_orden %}{{ query_sin_orden }}&amp;{% endif %}orden={% if orden == campo %}-{% endif %}{{ campo }}" hx-target="#tabla-cobros" hx-push-url="true">{{ titulo }}</a>
+  </span>
+</th>

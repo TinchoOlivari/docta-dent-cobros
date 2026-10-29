@@ -1,0 +1,50 @@
+{% extends "sistema/base.html" %}
+{% block title %}Avisos{% endblock %}
+{% block migas %}<li><span aria-current="page">Avisos</span></li>{% endblock %}
+{% block titulo %}Avisos{% endblock %}
+{% block subtitulo %}Avisos por email de los 8 eventos de 009.{% endblock %}
+{% block acciones %}<c-boton href="{% url 'auditoria:historial' 'avisos.configuracionavisos' 1 %}" icono="clock">Historial</c-boton>{% endblock %}
+{% block content %}
+<div class="flex flex-col gap-6">
+{% if sin_direcciones %}<c-alerta nivel="warning">No hay direcciones. Ningún aviso se envía.</c-alerta>{% endif %}
+<c-tarjeta titulo="Cuándo avisar">
+  <form method="post" class="max-w-md" data-sin-foco>
+    {% csrf_token %}
+    <c-campo :campo="form.margen" ayuda="Avisar cuando falte este porcentaje del tope" sufijo="%" />
+    <c-boton variante="primario">Guardar</c-boton>
+  </form>
+</c-tarjeta>
+
+<c-tarjeta titulo="Direcciones">
+  {% if direcciones %}
+  <c-tabla titulo_accesible="Direcciones de aviso">
+    <thead><tr><th>Email</th><th>Acciones</th></tr></thead>
+    <tbody>
+    {% for d in direcciones %}
+      <tr>
+        <td>{{ d.email }}</td>
+        <td>
+          <div class="flex flex-wrap items-center gap-x-3">
+            <a href="{% url 'auditoria:historial' 'avisos.direccionaviso' d.pk %}" class="text-brand-ink underline">Historial</a>
+            <form method="post" action="{% url 'avisos:borrar' d.pk %}" id="borrar-{{ d.pk }}">
+              {% csrf_token %}
+              <c-boton variante="peligro" form="borrar-{{ d.pk }}" data-confirmar-form="borrar-{{ d.pk }}" data-confirmar-dialogo="conf-{{ d.pk }}" data-enviar-directo>Borrar</c-boton>
+            </form>
+          </div>
+          <c-confirmar id="conf-{{ d.pk }}" titulo="Borrar dirección" :texto="d.email" boton="Borrar" />
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </c-tabla>
+  {% else %}
+  <c-vacio icono="bell" texto="Todavía no cargaste ninguna dirección." />
+  {% endif %}
+  <form method="post" action="{% url 'avisos:agregar' %}" class="mt-6 max-w-md">
+    {% csrf_token %}
+    <c-campo :campo="direccion_form.email" />
+    <c-boton variante="primario" icono="plus">Agregar</c-boton>
+  </form>
+</c-tarjeta>
+</div>
+{% endblock %}

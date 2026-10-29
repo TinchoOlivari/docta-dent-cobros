@@ -1,0 +1,81 @@
+{% extends "sistema/base.html" %}
+{% load pesos ui %}
+{% block title %}Pagos complementarios{% endblock %}
+{% block migas %}<li><span aria-current="page">Pagos complementarios</span></li>{% endblock %}
+{% block titulo %}Pagos complementarios <c-ayuda tema="Pagos complementarios" texto="Pagos que la clínica le hace a un destinatario para completar lo que esperaba recibir en el mes." />{% endblock %}
+{% block subtitulo %}Mes {{ mes|date:"m/Y" }}{% endblock %}
+{% block acciones %}<c-boton href="{% url 'cobros:complementario_nuevo' %}?mes={{ mes|date:'Y-m' }}" variante="primario" icono="plus">Registrar pago</c-boton>{% endblock %}
+{% block content %}
+<div class="flex flex-col gap-4">
+<c-tarjeta>
+  <form method="get" role="search" class="filtros">
+    <div class="field !mb-0">
+      <label for="filtro-mes" class="lbl-f">Mes</label>
+      <input class="input" type="month" name="mes" id="filtro-mes" value="{% if not mes_vacio %}{{ mes|date:'Y-m' }}{% endif %}">
+    </div>
+    <label class="inline-flex min-h-[44px] items-center gap-2"><input type="checkbox" name="con_falta" value="1"{% if con_falta %} checked{% endif %}> Restantes mayores a $0,00</label>
+    <c-boton variante="primario" icono="search">Ver</c-boton>
+  </form>
+</c-tarjeta>
+
+<c-tarjeta titulo="Restante por destinatario">
+  <c-slot name="acciones">
+    <c-menu icono="download" etiqueta="Descargar Restante por destinatario" lado="fin" deshabilitado="{% if mes_vacio %}true{% else %}false{% endif %}">
+      <li><a href="{% url 'reportes:destinatarios_descargar' %}?mes={{ mes|date:'Y-m' }}{% if con_falta %}&amp;con_falta=1{% endif %}&amp;formato=csv">CSV</a></li>
+      <li><a href="{% url 'reportes:destinatarios_descargar' %}?mes={{ mes|date:'Y-m' }}{% if con_falta %}&amp;con_falta=1{% endif %}&amp;formato=xlsx">Excel</a></li>
+    </c-menu>
+  </c-slot>
+  {% if filas %}
+  <c-tabla titulo_accesible="Restante por destinatario">
+    <thead><tr><th scope="col">Destinatario</th><th scope="col" class="col-sec col-monto">Esperado</th><th scope="col" class="col-sec col-monto">Recibido</th><th scope="col" class="col-monto">Restante <c-ayuda tema="Restante" texto="Lo que le falta recibir al destinatario para llegar al esperado del mes: esperado − recibido." /></th><th scope="col" class="col-sec max-lg:hidden">Cuentas</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead>
+    <tbody>
+      {% for f in filas %}
+      <tr>
+        <td>{{ f.nombre }}<small class="sub-movil tabular-nums">Esperado {{ f.esperado|pesos }}</small><small class="sub-movil tabular-nums">Recibido {{ f.recibido|pesos }}</small></td>
+        <td class="col-sec col-monto">{{ f.esperado|pesos }}</td>
+        <td class="col-sec col-monto">{{ f.recibido|pesos }}</td>
+        <td class="col-monto whitespace-nowrap font-medium">{% if f.falta < 0 %}<span class="text-warn">Recibió de más {{ f.demas|pesos }}</span>{% else %}{{ f.falta|pesos }}{% endif %}</td>
+        <td class="col-sec max-lg:hidden">{% for c in f.cuentas_transferencia %}<div>{{ c.alias|default:"" }} <small class="tabular-nums text-ink-3">{{ c.cbu|default:"" }}</small></div>{% endfor %}</td>
+        <td><c-menu icono="ellipsis" etiqueta="Acciones de {{ f.nombre }}" lado="fin">
+          {% if f.falta > 0 %}<li><a href="{% url 'cobros:complementario_nuevo' %}?destinatario={{ f.pk }}&amp;mes={{ mes|date:'Y-m' }}">Registrar pago</a></li>{% endif %}
+          <li><a href="{% url 'reportes:destinatario' f.pk %}?mes={{ mes|date:'Y-m' }}">Ver reporte</a></li>
+        </c-menu></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </c-tabla>
+  {% else %}
+  <c-vacio texto="No hay destinatarios para mostrar." :filtrado="con_falta" limpiar="{% url 'cobros:complementarios' %}" />
+  {% endif %}
+</c-tarjeta>
+
+<c-tarjeta titulo="Pagos complementarios realizados este mes">
+  <c-slot name="acciones">
+    <c-menu icono="download" etiqueta="Descargar Pagos complementarios realizados este mes" lado="fin" deshabilitado="{% if mes_vacio %}true{% else %}false{% endif %}">
+      <li><a href="?mes={{ mes|date:'Y-m' }}&amp;formato=csv">CSV</a></li>
+      <li><a href="?mes={{ mes|date:'Y-m' }}&amp;formato=xlsx">Excel</a></li>
+    </c-menu>
+  </c-slot>
+  {% if pagos %}
+  <c-tabla titulo_accesible="Pagos complementarios del mes">
+    <thead><tr><th scope="col" class="col-sec">Fecha de carga</th><th scope="col">Destinatario</th><th scope="col" class="col-monto">Monto</th><th scope="col" class="col-sec">Método</th><th scope="col" class="col-sec max-lg:hidden">Cuenta</th><th scope="col">Estado</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead>
+    <tbody>
+      {% for p in pagos %}
+      <tr>
+        <td class="col-sec whitespace-nowrap tabular-nums">{{ p.fecha_alta|date:"d/m/Y H:i" }}</td>
+        <td>{{ p.destinatario.nombre }}<small class="sub-movil tabular-nums">{{ p.fecha_alta|date:"d/m" }} · {{ p.get_metodo_display }}</small></td>
+        <td class="col-monto whitespace-nowrap font-medium">{{ p.monto|pesos }}</td>
+        <td class="col-sec">{{ p.get_metodo_display }}</td>
+        <td class="col-sec max-lg:hidden">{{ p.cuenta|default:"—" }}</td>
+        <td>{% badge p.estado p.get_estado_display %}</td>
+        <td><a class="link text-brand-ink inline-flex items-center max-lg:min-h-[44px]" href="{% url 'cobros:complementario_detalle' p.pk %}">Ver</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </c-tabla>
+  {% else %}
+  <c-vacio texto="No hay pagos complementarios registrados en {{ mes|date:'F'|lower }} del {{ mes|date:'Y' }}." />
+  {% endif %}
+</c-tarjeta>
+</div>
+{% endblock %}

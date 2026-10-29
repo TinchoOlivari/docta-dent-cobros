@@ -1,0 +1,17 @@
+{# Ícono de estado de una fila del administrador (018/FR-028). Usa `c.nivel` y `c.motivos` (`estado_visual`). #}
+{# El `details` cerrado oculta su contenido; con el mouse encima se muestra (dropdown-hover no alcanza). El panel es `fixed`: la tabla tiene scroll propio y lo cortaría. Desde `sm` el CSS lo corre al costado del ícono (021/FR-018): `app.js` lo deja 4 px bajo el ícono. #}
+<details class="dropdown dropdown-hover ayuda [&:hover::details-content]:[content-visibility:visible]" data-ayuda>
+  {% if c.nivel == "verde" %}
+  <summary class="icon-btn text-success" aria-expanded="false" aria-label="Estado: Todo en orden. {{ c.motivos|join:' ' }}"><c-icono nombre="circle-check" clase="size-4" /></summary>
+  {% elif c.nivel == "amarillo" %}
+  <summary class="icon-btn text-warning" aria-expanded="false" aria-label="Estado: Revisar. {{ c.motivos|join:' ' }}"><c-icono nombre="circle-alert" clase="size-4" /></summary>
+  {% elif c.nivel == "rojo" %}
+  <summary class="icon-btn text-error" aria-expanded="false" aria-label="Estado: Falló. {{ c.motivos|join:' ' }}"><c-icono nombre="triangle-alert" clase="size-4" /></summary>
+  {% else %}
+  <summary class="icon-btn text-ink-3" aria-expanded="false" aria-label="Estado: Cancelado. {{ c.motivos|join:' ' }}"><c-icono nombre="circle-x" clase="size-4" /></summary>
+  {% endif %}
+  <div class="dropdown-content ayuda-panel fixed sm:translate-x-11 sm:-translate-y-12" role="note">
+    <p class="font-semibold">{% if c.nivel == "verde" %}Todo en orden{% elif c.nivel == "amarillo" %}Revisar{% elif c.nivel == "rojo" %}Falló{% else %}Cancelado{% endif %}</p>
+    <ul class="m-0 list-none p-0">{% for m in c.motivos %}<li>{{ m }}</li>{% endfor %}</ul>
+  </div>
+</details>

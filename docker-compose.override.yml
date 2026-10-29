@@ -1,0 +1,33 @@
+services:
+  db:
+    env_file:
+      - .env
+
+  redis:
+    restart: unless-stopped
+
+  web:
+    env_file:
+      - .env
+
+  celery:
+    env_file:
+      - .env
+
+  nginx:
+    volumes:
+      - ./nginx/production.conf:/etc/nginx/conf.d/default.conf
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+
+  certbot:
+    image: certbot/certbot
+    container_name: django_certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    depends_on:
+      - nginx
+

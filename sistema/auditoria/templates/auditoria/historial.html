@@ -1,0 +1,11 @@
+{% extends "sistema/base.html" %}
+{% block title %}Historial de {{ titulo }}{% endblock %}
+{% block migas %}<li><a href="{% url 'auditoria:eventos' %}">Auditoría</a></li><li><span aria-current="page">Historial</span></li>{% endblock %}
+{% block titulo %}Historial de {{ titulo }}{% endblock %}
+{% block acciones %}<c-boton href="{% url 'auditoria:eventos' %}" icono="arrow-left">Volver</c-boton>{% endblock %}
+{% block content %}
+<div class="flex flex-col gap-6">
+{% include "auditoria/_tabla.html" with eventos=pagina %}
+<c-paginacion :pagina="pagina" nombre="eventos" />
+</div>
+{% endblock %}

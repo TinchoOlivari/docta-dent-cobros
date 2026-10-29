@@ -1,0 +1,54 @@
+{% load static ui %}<!DOCTYPE html>
+<html lang="es" data-theme="docta-claro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="htmx-config" content='{"historyCacheSize":0,"includeIndicatorStyles":false}'>
+  <title>{% block title %}{% endblock %} · Docta Dent</title>
+  <link rel="icon" type="image/png" href="{% static 'sistema/img/favicon.png' %}">
+  <link rel="stylesheet" href="{% static 'sistema/css/app.css' %}">
+  <script defer src="{% static 'sistema/js/app.js' %}"></script>
+  <script defer src="{% static 'sistema/vendor/htmx-2.0.11.min.js' %}"></script>
+  <script defer src="{% static 'sistema/vendor/alpine-3.17.5.min.js' %}"></script>
+  {% block scripts %}{% endblock %}
+</head>
+<body data-pdfjs="{% static 'sistema/vendor/pdf-6.4.299.legacy.min.js' %}" data-pdfjs-worker="{% static 'sistema/vendor/pdf.worker-6.4.299.legacy.min.js' %}"
+      data-cally="{% static 'sistema/vendor/cally-0.9.2.js' %}" data-tomselect="{% static 'sistema/vendor/tom-select-2.6.2.popular.min.js' %}">
+  <a class="skip" href="#contenido">Saltar al contenido</a>
+  {% if is_staging %}<div role="note" class="alert alert-warning rounded-none justify-center text-sm font-medium">Ambiente de staging: no es producción</div>{% endif %}
+  <div aria-live="polite" data-avisos class="toast toast-top toast-center pointer-events-none z-50">
+    {% for mensaje in messages %}<c-aviso :nivel="mensaje.level_tag">{{ mensaje }}</c-aviso>{% endfor %}
+  </div>
+  <template id="icono-archivo"><c-icono nombre="file-text" clase="size-10" /></template>
+  <template id="icono-calendario"><c-icono nombre="calendar" /></template>
+  <template id="icono-error"><c-icono nombre="circle-alert" clase="size-4" /></template>
+  <template id="aviso-error-htmx"><c-aviso nivel="error">No se pudo cargar. Revisá la conexión y volvé a intentar.</c-aviso></template>
+  {% if request.user.is_authenticated %}
+  <div class="shell{% if request.COOKIES.dd_menu == '1' %} is-collapsed{% endif %}" x-data="shell" x-bind:class="{ 'is-collapsed': collapsed, 'drawer-open': drawer }" x-on:keydown.escape.window="cerrar()">
+    {% include "sistema/componentes/_menu.html" %}
+    <div class="scrim" x-on:click="cerrar()"></div>
+    <div class="topbar">
+      <button type="button" class="icon-btn" x-ref="abrir" x-on:click="abrir()" aria-controls="menu" x-bind:aria-expanded="drawer" aria-expanded="false" aria-label="Abrir menú"><c-icono nombre="menu" /></button>
+      <span class="t">Docta Dent</span>
+    </div>
+    <main id="contenido" class="main" tabindex="-1">
+      <noscript>
+        <nav aria-label="Menú sin JavaScript" class="nav mb-4 lg:hidden">{% include "sistema/componentes/_menu_lista.html" with plano=True %}</nav>
+        <form method="post" action="{% url 'usuarios:logout' %}" class="mb-4 lg:hidden">{% csrf_token %}<c-boton variante="secundario" icono="log-out">Salir</c-boton></form>
+      </noscript>
+      {% migas_pagina %}{% block migas %}{% endblock %}{% endmigas_pagina %}
+      <div class="ph">
+        <div>{% h1_pagina %}{% block titulo %}{% endblock %}{% endh1_pagina %}{% sub_pagina %}{% block subtitulo %}{% endblock %}{% endsub_pagina %}</div>
+        <div class="acts">{% block acciones %}{% endblock %}</div>
+      </div>
+  {% else %}
+  <main id="contenido" tabindex="-1">
+  {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  {% if request.user.is_authenticated %}
+  </div>
+  {% endif %}
+</body>
+</html>

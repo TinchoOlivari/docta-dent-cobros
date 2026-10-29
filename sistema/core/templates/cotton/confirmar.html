@@ -1,0 +1,12 @@
+<c-vars id="" titulo="" texto="" boton="Confirmar" volver="Volver" variante="peligro" />
+<dialog id="{{ id }}" class="modal" aria-labelledby="{{ id }}-titulo">
+  <div class="modal-box">
+    <h2 id="{{ id }}-titulo" class="text-lg font-semibold">{{ titulo }}</h2>
+    {% if texto %}<p class="mt-2 text-ink-2">{{ texto }}</p>{% endif %}
+    <div data-cuerpo class="mt-3">{{ slot }}</div>
+    <div class="modal-action flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <button type="button" class="btn btn-secundario" data-cerrar autofocus>{{ volver }}</button>
+      <button type="button" class="btn {% if variante == 'peligro' %}btn-peligro{% else %}btn-primary{% endif %}" data-confirmar>{{ boton }}</button>
+    </div>
+  </div>
+</dialog>

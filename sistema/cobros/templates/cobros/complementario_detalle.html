@@ -1,0 +1,42 @@
+{% extends "sistema/base.html" %}
+{% load pesos ui %}
+{% block title %}Pago complementario {{ pago.pk }}{% endblock %}
+{% block migas %}<li><a href="{% url 'cobros:complementarios' %}?mes={{ pago.mes|date:'Y-m' }}">Pagos complementarios</a></li><li><span aria-current="page">Pago {{ pago.pk }}</span></li>{% endblock %}
+{% block titulo %}Pago complementario {{ pago.pk }}{% endblock %}
+{% block subtitulo %}{% if migrado %}{% badge "migrado" "Migrado del sistema anterior" %}{% endif %}{% endblock %}
+{% block acciones %}
+{% if pago.comprobante %}<c-boton href="{% url 'cobros:complementario_comprobante' pago.pk %}" icono="file-text">Comprobante</c-boton>{% endif %}
+<c-boton href="{% url 'auditoria:historial' 'cobros.pagocomplementario' pago.pk %}" icono="book-open">Historial</c-boton>
+{% if registrado %}<c-boton href="{% url 'cobros:complementario_editar' pago.pk %}">Editar</c-boton>{% endif %}
+{% endblock %}
+{% block content %}
+<div class="flex max-w-3xl flex-col gap-4">
+<c-tarjeta titulo="Datos del pago">
+  <dl class="kv">
+    <div><dt>Monto</dt><dd class="tabular-nums" style="font-size:24px;font-weight:600">{{ pago.monto|pesos }}</dd></div>
+    <div><dt>Estado</dt><dd>{% badge pago.estado pago.get_estado_display %}</dd></div>
+    <div><dt>Destinatario</dt><dd>{{ pago.destinatario.nombre }}</dd></div>
+    <div><dt>Mes</dt><dd class="tabular-nums">{{ pago.mes|date:"m/Y" }}</dd></div>
+    <div><dt>Método</dt><dd>{{ pago.get_metodo_display }}</dd></div>
+    <div><dt>Cuenta</dt><dd>{{ pago.cuenta|default:"—" }}</dd></div>
+    {% if not registrado %}
+    <div><dt>Motivo de anulación</dt><dd>{{ pago.get_motivo_anulacion_display }}</dd></div>
+    <div><dt>Detalle</dt><dd>{{ pago.detalle_anulacion }}</dd></div>
+    {% endif %}
+    <div class="sm:col-span-2"><dt>Observaciones</dt><dd>{{ pago.observaciones|default:"—" }}</dd></div>
+    <div class="sm:col-span-2"><dt>Cargado por</dt><dd>{% if migrado %}Cargado en el sistema anterior{% else %}{{ pago.creado_por.get_username }} el <span class="tabular-nums">{{ pago.fecha_alta|date:"d/m/Y H:i" }}</span>{% endif %}</dd></div>
+  </dl>
+</c-tarjeta>
+{% if registrado %}
+<c-tarjeta titulo="Anular el pago">
+  <form method="post" action="{% url 'cobros:complementario_anular' pago.pk %}" id="form-anular">
+    {% csrf_token %}
+    <c-campo :campo="form.motivo" />
+    <c-campo :campo="form.detalle" />
+    <c-boton variante="peligro" icono="trash-2" form="form-anular" data-confirmar-form="form-anular" data-confirmar-dialogo="confirmar-anular">Anular pago</c-boton>
+  </form>
+</c-tarjeta>
+<c-confirmar id="confirmar-anular" titulo="Anular el pago" texto="El pago deja de contar para el mes. Esta acción queda en el historial." boton="Anular pago" />
+{% endif %}
+</div>
+{% endblock %}

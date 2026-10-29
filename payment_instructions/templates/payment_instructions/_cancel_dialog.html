@@ -1,0 +1,134 @@
+{% comment %}
+Diálogo para cancelar un pago pendiente. Lo usan la lista de transferencias
+pendientes y el formulario de transferencia.
+
+Expone una función global: abrirCancelDialog(paymentId, onSuccess, opciones).
+  - onSuccess: se llama después de que el servidor confirmó la cancelación.
+  - opciones.titulo y opciones.mensaje: para el caso "vas a perder este pago",
+    cuando el operador cambia de pantalla y hay un pendiente abierto.
+
+El motivo siempre lo elige una persona: es plata, y "Otro" exige el detalle
+escrito. El backend lo valida igual; esto solo lo avisa antes.
+{% endcomment %}
+<div id="cancelDialog" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/70 p-4">
+    <div class="bg-dd-surface rounded-lg shadow-xl w-full max-w-md p-6" role="dialog" aria-modal="true"
+        aria-labelledby="cancelDialogTitle">
+        <h2 id="cancelDialogTitle" class="text-lg font-semibold text-dd-primary mb-1">Cancelar</h2>
+        <p id="cancelDialogMessage" class="text-sm text-dd-muted mb-4">
+            Al cancelar, el monto se libera. En la próxima búsqueda puede aparecer otro destinatario.
+        </p>
+
+        <label for="cancelMotivo" class="block text-sm text-dd-secondary mb-1">Motivo</label>
+        <select id="cancelMotivo"
+            class="w-full bg-dd-inset border border-dd-border rounded px-3 py-2 text-dd-primary mb-4 focus:ring-dd-brand focus:outline-none">
+            {% for valor, etiqueta in motivos_cancelacion %}
+            <option value="{{ valor }}">{{ etiqueta }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="cancelObservacion" class="block text-sm text-dd-secondary mb-1">
+            Información adicional <span id="cancelObservacionRequerida" class="hidden text-dd-error">(obligatorio)</span>
+        </label>
+        <textarea id="cancelObservacion" rows="3"
+            class="w-full bg-dd-inset border border-dd-border rounded px-3 py-2 text-dd-primary mb-2 focus:ring-dd-brand focus:outline-none"></textarea>
+
+        <p id="cancelDialogError" class="hidden text-sm text-dd-error mb-3"></p>
+
+        <div class="flex justify-end gap-3 mt-2">
+            <button type="button" id="cancelDialogClose"
+                class="px-4 py-2 rounded text-dd-secondary hover:bg-dd-elevated">Volver</button>
+            <button type="button" id="cancelDialogConfirm"
+                class="px-4 py-2 rounded bg-dd-error text-white font-medium hover:opacity-90">Cancelar pago</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const dialog = document.getElementById('cancelDialog');
+        const tituloEl = document.getElementById('cancelDialogTitle');
+        const mensajeEl = document.getElementById('cancelDialogMessage');
+        const motivoEl = document.getElementById('cancelMotivo');
+        const observacionEl = document.getElementById('cancelObservacion');
+        const observacionRequerida = document.getElementById('cancelObservacionRequerida');
+        const errorEl = document.getElementById('cancelDialogError');
+        const confirmBtn = document.getElementById('cancelDialogConfirm');
+
+        const TITULO_POR_DEFECTO = tituloEl.textContent;
+        const MENSAJE_POR_DEFECTO = mensajeEl.textContent;
+
+        let paymentId = null;
+        let onSuccess = null;
+
+        function actualizarRequerido() {
+            observacionRequerida.classList.toggle('hidden', motivoEl.value !== 'OTRO');
+        }
+
+        function mostrarError(mensaje) {
+            errorEl.textContent = mensaje;
+            errorEl.classList.remove('hidden');
+        }
+
+        function cerrar() {
+            paymentId = null;
+            onSuccess = null;
+            dialog.classList.add('hidden');
+            dialog.classList.remove('flex');
+        }
+
+        window.abrirCancelDialog = function (id, callback, opciones) {
+            opciones = opciones || {};
+            paymentId = id;
+            onSuccess = callback;
+            tituloEl.textContent = opciones.titulo || TITULO_POR_DEFECTO;
+            mensajeEl.textContent = opciones.mensaje || MENSAJE_POR_DEFECTO;
+            observacionEl.value = '';
+            motivoEl.selectedIndex = 0;
+            errorEl.classList.add('hidden');
+            dialog.classList.remove('hidden');
+            dialog.classList.add('flex');
+            motivoEl.focus();
+            actualizarRequerido();
+        };
+
+        motivoEl.addEventListener('change', actualizarRequerido);
+        document.getElementById('cancelDialogClose').addEventListener('click', cerrar);
+        dialog.addEventListener('click', function (event) {
+            if (event.target === dialog) cerrar();
+        });
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !dialog.classList.contains('hidden')) cerrar();
+        });
+
+        confirmBtn.addEventListener('click', async function () {
+            if (!paymentId) return;
+            const callback = onSuccess;
+            confirmBtn.disabled = true;
+            try {
+                const response = await fetch('{% url "payment_instructions:cancel_payment" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                    body: JSON.stringify({
+                        payment_id: paymentId,
+                        motivo: motivoEl.value,
+                        observacion: observacionEl.value,
+                    }),
+                });
+                const data = await response.json();
+                if (data.success) {
+                    cerrar();
+                    if (callback) callback();
+                } else {
+                    mostrarError(data.error || 'No se pudo cancelar el pago.');
+                }
+            } catch (error) {
+                mostrarError('Error de conexión');
+            } finally {
+                confirmBtn.disabled = false;
+            }
+        });
+    })();
+</script>

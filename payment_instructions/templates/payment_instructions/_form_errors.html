@@ -1,0 +1,374 @@
+
+<style>
+    :root {
+        --dd-snack-error-bg: #3A2426;
+        --dd-snack-error-border: #7C3A3A;
+        --dd-snack-error-text: #F2A6A6;
+        --dd-snack-success-bg: #243426;
+        --dd-snack-success-border: #4F704D;
+        --dd-snack-success-text: #B8E3B2;
+    }
+
+    #ddSnackbar {
+        position: fixed;
+        left: 50%;
+        bottom: max(1.5rem, env(safe-area-inset-bottom));
+        transform: translateX(-50%);
+        z-index: 60;
+        width: calc(100vw - 2rem);
+        max-width: 28rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 0.875rem;
+        border: 1px solid;
+        border-radius: 0.75rem;
+        box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        overflow: hidden;
+    }
+
+    #ddSnackbar[hidden] {
+        display: none;
+    }
+
+    #ddSnackbar[data-tipo="error"] {
+        background-color: color-mix(in srgb, var(--dd-snack-error-bg) 92%, transparent);
+        border-color: var(--dd-snack-error-border);
+        color: var(--dd-snack-error-text);
+    }
+
+    #ddSnackbar[data-tipo="success"] {
+        background-color: color-mix(in srgb, var(--dd-snack-success-bg) 92%, transparent);
+        border-color: var(--dd-snack-success-border);
+        color: var(--dd-snack-success-text);
+    }
+
+    #ddSnackbarIconError,
+    #ddSnackbarIconSuccess {
+        display: none;
+        flex-shrink: 0;
+        width: 1.25rem;
+        height: 1.25rem;
+        margin-top: 0.0625rem;
+    }
+
+    #ddSnackbar[data-tipo="error"] #ddSnackbarIconError,
+    #ddSnackbar[data-tipo="success"] #ddSnackbarIconSuccess {
+        display: block;
+    }
+
+    #ddSnackbarText {
+        flex: 1 1 auto;
+        font-size: 0.8125rem;
+        line-height: 1.35rem;
+    }
+
+    @media (min-width: 640px) {
+        #ddSnackbarText {
+            font-size: 0.875rem;
+        }
+    }
+
+    #ddSnackbarClose {
+        flex-shrink: 0;
+        padding: 0.125rem;
+        border-radius: 0.375rem;
+        opacity: 0.65;
+        transition: opacity 150ms ease;
+    }
+
+    #ddSnackbarClose:hover {
+        opacity: 1;
+    }
+
+    #ddSnackbarProgress {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: 2px;
+        width: 100%;
+        background-color: currentColor;
+        opacity: 0.45;
+        transform-origin: left center;
+    }
+
+    /* Entrada con overshoot corto: sube, pasa apenas de largo y asienta. */
+    @keyframes dd-snackbar-in {
+        from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.96); }
+        to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+    }
+
+    @keyframes dd-snackbar-out {
+        from { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+        to   { opacity: 0; transform: translateX(-50%) translateY(12px) scale(0.97); }
+    }
+
+    @keyframes dd-snackbar-progress {
+        from { transform: scaleX(1); }
+        to   { transform: scaleX(0); }
+    }
+
+    .dd-snackbar-in {
+        animation: dd-snackbar-in 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .dd-snackbar-out {
+        animation: dd-snackbar-out 180ms ease-in both;
+    }
+
+    /* Error de campo: aparece empujando apenas hacia abajo, sin saltar el layout. */
+    @keyframes dd-field-error-in {
+        from { opacity: 0; transform: translateY(-4px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .dd-field-error {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.375rem;
+        margin-top: 0.375rem;
+        font-size: 0.75rem;
+        line-height: 1rem;
+        color: var(--dd-snack-error-text);
+        animation: dd-field-error-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .dd-field-error svg {
+        flex-shrink: 0;
+        width: 0.875rem;
+        height: 0.875rem;
+        margin-top: 0.0625rem;
+    }
+
+    /* Gana sobre el borde propio del input, que en varios forms es inline. */
+    .dd-field-invalid,
+    .dd-field-invalid:focus {
+        border-color: var(--dd-snack-error-border) !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .dd-snackbar-in,
+        .dd-snackbar-out,
+        .dd-field-error {
+            animation-duration: 1ms;
+        }
+
+        #ddSnackbarProgress {
+            animation: none;
+        }
+    }
+</style>
+
+<div id="ddSnackbar" data-tipo="error" role="alert" aria-live="assertive" hidden>
+    <svg id="ddSnackbarIconError" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 5a1 1 0 112 0v5a1 1 0 11-2 0V5zm1 10a1.25 1.25 0 100-2.5 1.25 1.25 0 000 2.5z" clip-rule="evenodd" />
+    </svg>
+    <svg id="ddSnackbarIconSuccess" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.7-9.9a1 1 0 00-1.4-1.4L9 10l-1.3-1.3a1 1 0 10-1.4 1.4l2 2a1 1 0 001.4 0l4-4z" clip-rule="evenodd" />
+    </svg>
+    <span id="ddSnackbarText"></span>
+    <button type="button" id="ddSnackbarClose" aria-label="Cerrar aviso">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="width: 1rem; height: 1rem;">
+            <path fill-rule="evenodd" d="M4.3 4.3a1 1 0 011.4 0L10 8.6l4.3-4.3a1 1 0 111.4 1.4L11.4 10l4.3 4.3a1 1 0 01-1.4 1.4L10 11.4l-4.3 4.3a1 1 0 01-1.4-1.4L8.6 10 4.3 5.7a1 1 0 010-1.4z" clip-rule="evenodd" />
+        </svg>
+    </button>
+    <div id="ddSnackbarProgress"></div>
+</div>
+
+<script>
+    (function () {
+        const SNACKBAR_MS = 6000;
+
+        const snackbar = document.getElementById('ddSnackbar');
+        const snackbarText = document.getElementById('ddSnackbarText');
+        const snackbarProgress = document.getElementById('ddSnackbarProgress');
+        const snackbarClose = document.getElementById('ddSnackbarClose');
+
+        let dismissTimer = null;
+        let onSalida = null;
+
+        // Cada template declara su propio mapa; sin él se prueba el nombre como id.
+        function resolveField(fieldName) {
+            if (!fieldName) return null;
+            const map = window.DD_FIELD_IDS || {};
+            return document.getElementById(map[fieldName] || fieldName);
+        }
+
+        function olvidarSalida() {
+            if (!onSalida) return;
+            snackbar.removeEventListener('animationend', onSalida);
+            onSalida = null;
+        }
+
+        function hideSnackbar() {
+            if (snackbar.hidden) return;
+            clearTimeout(dismissTimer);
+            olvidarSalida();
+            snackbar.classList.remove('dd-snackbar-in');
+            snackbar.classList.add('dd-snackbar-out');
+            onSalida = function (evento) {
+                if (evento.target !== snackbar) return;
+                olvidarSalida();
+                snackbar.classList.remove('dd-snackbar-out');
+                snackbar.hidden = true;
+            };
+            snackbar.addEventListener('animationend', onSalida);
+        }
+
+        // Uno solo a la vez: el segundo reemplaza el texto y reinicia el reloj. Una pila
+        // de avisos en un teléfono tapa el formulario, que es lo que el operador necesita.
+        function showSnackbar(message, tipo) {
+            clearTimeout(dismissTimer);
+            olvidarSalida();
+            snackbar.dataset.tipo = tipo === 'success' ? 'success' : 'error';
+            snackbarText.textContent = message;
+            snackbar.hidden = false;
+
+            // Las dos clases fuera y un reflow: sin esto el segundo aviso aparece de
+            // golpe, porque la clase de entrada ya estaba puesta desde el anterior.
+            snackbar.classList.remove('dd-snackbar-out', 'dd-snackbar-in');
+            void snackbar.offsetWidth;
+            snackbar.classList.add('dd-snackbar-in');
+            snackbarProgress.style.animation = 'none';
+            void snackbarProgress.offsetWidth;
+            snackbarProgress.style.animation = 'dd-snackbar-progress ' + SNACKBAR_MS + 'ms linear both';
+
+            dismissTimer = setTimeout(hideSnackbar, SNACKBAR_MS);
+        }
+
+        function bloqueDe(element) {
+            let nodo = element;
+            for (let i = 0; i < 5 && nodo.parentElement; i++) {
+                const padre = nodo.parentElement;
+                if (padre.querySelector('h4, label')) return padre;
+                nodo = padre;
+            }
+            return null;
+        }
+
+        function controlDe(element) {
+            if (element.matches('input, select, textarea')) return element;
+            return element.querySelector('input, select, textarea') || element;
+        }
+
+        function clearFieldError(element) {
+            if (!element) return;
+            element.classList.remove('dd-field-invalid');
+            element.removeAttribute('aria-invalid');
+            element.removeAttribute('aria-describedby');
+            const mensaje = document.getElementById(element.id + 'Error');
+            if (mensaje) mensaje.remove();
+        }
+
+        function clearErrors() {
+            document.querySelectorAll('.dd-field-invalid').forEach(clearFieldError);
+        }
+
+        // Devuelve false si el campo no existe en esta pantalla. Quien llama decide qué
+        // hacer con eso; handleApiError cae al snackbar para que el error no se pierda.
+        function showFieldError(fieldName, message, opciones) {
+            const element = resolveField(fieldName);
+            if (!element) return false;
+
+            clearFieldError(element);
+
+            const errorId = element.id + 'Error';
+            const mensaje = document.createElement('p');
+            mensaje.id = errorId;
+            mensaje.className = 'dd-field-error';
+            mensaje.innerHTML =
+                '<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">' +
+                '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 5a1 1 0 112 0v5a1 1 0 11-2 0V5zm1 10a1.25 1.25 0 100-2.5 1.25 1.25 0 000 2.5z" clip-rule="evenodd" /></svg>' +
+                '<span></span>';
+            mensaje.querySelector('span').textContent = message;
+
+            element.classList.add('dd-field-invalid');
+            element.setAttribute('aria-invalid', 'true');
+            element.setAttribute('aria-describedby', errorId);
+            const bloque = bloqueDe(element);
+            if (bloque) {
+                bloque.appendChild(mensaje);
+            } else {
+                element.insertAdjacentElement('afterend', mensaje);
+            }
+
+            // Se limpia al corregir, no al reenviar: el operador ve que el campo quedó bien.
+            const control = controlDe(element);
+            const onFix = function () {
+                control.removeEventListener('input', onFix);
+                control.removeEventListener('change', onFix);
+                clearFieldError(element);
+            };
+            control.addEventListener('input', onFix);
+            control.addEventListener('change', onFix);
+
+            if (!opciones || opciones.focus !== false) {
+                element.focus({ preventScroll: true });
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return true;
+        }
+
+        function validarCampos(reglas) {
+            hideSnackbar();
+            clearErrors();
+
+            const elementos = [];
+            const sinCampo = [];
+
+            reglas.forEach(function (regla) {
+                if (regla.ok) return;
+                if (showFieldError(regla.field, regla.message, { focus: false })) {
+                    elementos.push(resolveField(regla.field));
+                } else {
+                    sinCampo.push(regla.message);
+                }
+            });
+
+            if (!elementos.length && !sinCampo.length) return true;
+
+            if (elementos.length) {
+                elementos.sort(function (a, b) {
+                    const posicion = a.compareDocumentPosition(b);
+                    return posicion & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+                });
+                const primero = elementos[0];
+                primero.focus({ preventScroll: true });
+                primero.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                showSnackbar(sinCampo[0], 'error');
+            }
+
+            return false;
+        }
+
+        // Punto único donde se decide input vs snackbar. Los cinco forms llaman a esto.
+        function handleApiError(data) {
+            const message = (data && data.error) || 'Ocurrió un error inesperado.';
+            if (data && data.field && showFieldError(data.field, message)) return;
+            showSnackbar(message, 'error');
+        }
+
+        snackbarClose.addEventListener('click', hideSnackbar);
+
+        window.showSnackbar = showSnackbar;
+        window.hideSnackbar = hideSnackbar;
+        window.showFieldError = showFieldError;
+        window.validarCampos = validarCampos;
+        window.clearErrors = clearErrors;
+        window.handleApiError = handleApiError;
+
+        // Nombres que ya usan los templates. Así el reemplazo del div viejo no obliga a
+        // tocar cada llamada suelta de validación del lado del cliente.
+        window.showError = function (message) { showSnackbar(message, 'error'); };
+        window.showSuccess = function (message) { showSnackbar(message, 'success'); };
+        // Los templates la llaman al empezar cada envío y al corregir un adjunto: limpia
+        // todo lo que quedó de un intento anterior, aviso y marcas de campo.
+        window.hideMessages = function () {
+            hideSnackbar();
+            clearErrors();
+        };
+    })();
+</script>

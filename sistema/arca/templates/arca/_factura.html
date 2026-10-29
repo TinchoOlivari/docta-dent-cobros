@@ -1,0 +1,57 @@
+{% load pesos ui arca %}
+{% if comprobantes_fiscales %}
+<div id="factura" class="mb-4">
+<c-tarjeta titulo="Factura">
+  {% for c in comprobantes_fiscales|dictsortreversed:'vigente' %}
+  {% with d=c|detalle_factura %}
+  <div class="space-y-1 border-b border-line py-3 first:pt-0 last:border-b-0 last:pb-0" id="comprobante-{{ c.pk }}">
+    <p class="flex flex-wrap items-center gap-2 font-medium">{{ c.get_tipo_display }}{% if c.a_revisar %} · Factura a revisar{% endif %}
+      {% badge c.estado c.get_estado_display %}</p>
+    {% if c.tipo == "factura" %}
+      {% if c.vigente %}<p class="font-medium text-success">Vigente</p>
+      {% else %}{% with nota=c.notas_credito.first %}{% if nota %}<p class="font-medium text-ink-2">Anulada por nota de crédito{% if nota.numero %} {{ nota.punto_venta|stringformat:"05d" }}-{{ nota.numero|stringformat:"08d" }}{% endif %}</p>{% endif %}{% endwith %}{% endif %}
+    {% endif %}
+    <p>Emisor: {{ c.emisor.razon_social }} · CUIT <span class="tabular-nums">{{ d.cuit }}</span></p>
+    <p class="tabular-nums">Receptor: {{ d.receptor }}</p>
+    {% if d.reintento %}<c-alerta nivel="warning">{{ d.reintento }}</c-alerta>{% endif %}
+    {% if c.numero %}<p class="tabular-nums">Número: {{ c.punto_venta|stringformat:"05d" }}-{{ c.numero|stringformat:"08d" }}</p>{% endif %}
+    {% if c.fecha %}<p class="tabular-nums">Fecha: {{ c.fecha|date:"d/m/Y" }}</p>{% endif %}
+    <p class="tabular-nums">Neto: {{ d.neto|pesos }} · IVA: {{ d.iva|pesos }} · Total: {{ d.total|pesos }}</p>
+    {% if c.cae %}<p class="tabular-nums">CAE: {{ c.cae }}{% if c.cae_vence %} (vence el {{ c.cae_vence|date:"d/m/Y" }}){% endif %}</p>{% endif %}
+    {% if c.estado == "error" %}<c-alerta nivel="error">Motivo: {{ c.motivo }}</c-alerta>{% endif %}
+    <div class="flex flex-wrap items-center gap-2 pt-1">
+    {% if c.estado == "emitido" %}<c-boton href="{% url 'arca:pdf' c.pk %}" icono="download" data-descarga>Descargar PDF</c-boton>{% endif %}
+    {% if c.estado == "error" %}
+      {% url 'arca:reintentar' c.pk as url_reintentar %}
+      {% if url_reintentar %}<form method="post" action="{{ url_reintentar }}">{% csrf_token %}<c-boton variante="primario">Reintentar</c-boton></form>{% endif %}
+    {% endif %}
+    {% if c.tipo == "factura" and c.vigente %}
+      {% if c.estado == "emitido" %}
+        {% url 'arca:nota_credito' cobro.pk as url_nota %}
+        {% if url_nota %}
+        {% with idc=c.pk|stringformat:"s" %}{% with id_nota="confirmar-nota-"|add:idc %}
+        <form method="post" action="{{ url_nota }}" id="form-nota-{{ c.pk }}">{% csrf_token %}<c-boton variante="peligro" form="form-nota-{{ c.pk }}" data-confirmar-form="form-nota-{{ c.pk }}" :data-confirmar-dialogo="id_nota">Emitir nota de crédito</c-boton></form>
+        <c-confirmar :id="id_nota" titulo="Emitir nota de crédito" texto="ARCA registra la nota de crédito. No se puede deshacer." boton="Emitir nota de crédito" />
+        {% endwith %}{% endwith %}
+        {% endif %}
+      {% endif %}
+      {% if c.a_revisar %}
+        {% url 'arca:revisar' cobro.pk as url_revisar %}
+        {% if url_revisar %}
+        {% with idc=c.pk|stringformat:"s" %}{% with id_rev="confirmar-revisar-"|add:idc %}
+        <form method="post" action="{{ url_revisar }}" id="form-revisar-{{ c.pk }}">{% csrf_token %}<input type="hidden" name="emitir" value="si"><c-boton variante="primario" form="form-revisar-{{ c.pk }}" data-confirmar-form="form-revisar-{{ c.pk }}" :data-confirmar-dialogo="id_rev">Revisar: emitir nota de crédito</c-boton></form>
+        <c-confirmar :id="id_rev" titulo="Emitir nota de crédito" boton="Emitir nota de crédito">¿Emitir nota de crédito por {{ c.total|pesos }}{% if cobro.destinatario.facturacion_activa and not cobro.migrado and not cobro.faltan_items %} y una factura nueva?{% else %}? No se emite factura nueva: el destinatario no tiene la facturación activa.{% endif %}</c-confirmar>
+        {% endwith %}{% endwith %}
+        <form method="post" action="{{ url_revisar }}">{% csrf_token %}<c-boton nombre="emitir" valor="no">Revisar: dejar la factura</c-boton></form>
+        {% endif %}
+      {% endif %}
+      {% url 'arca:datos_factura' cobro.pk as url_datos %}
+      {% if url_datos %}<c-boton href="{{ url_datos }}" variante="secundario">Cambiar datos de la factura</c-boton>{% endif %}
+    {% endif %}
+    </div>
+  </div>
+  {% endwith %}
+  {% endfor %}
+</c-tarjeta>
+</div>
+{% endif %}

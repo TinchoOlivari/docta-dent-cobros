@@ -1,0 +1,9 @@
+{% extends "sistema/base.html" %}
+{% block title %}Sin permiso{% endblock %}
+{% block titulo %}Sin permiso{% endblock %}
+{% block content %}
+  <c-tarjeta>
+    <p class="mb-4">No tenés permiso para ver esta página.</p>
+    <c-boton href="{% url 'usuarios:inicio' %}" variante="secundario">Volver al inicio</c-boton>
+  </c-tarjeta>
+{% endblock %}

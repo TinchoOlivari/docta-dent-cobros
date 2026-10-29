@@ -1,0 +1,8 @@
+<c-vars variante="secundario" tipo="submit" href="" icono="" etiqueta="" nombre="" valor="" deshabilitado="" bloque="" />
+{% if href %}<a href="{{ href }}"{% else %}<button type="{{ tipo }}"{% if nombre %} name="{{ nombre }}" value="{{ valor }}"{% endif %}{% if deshabilitado %} disabled{% endif %}{% endif %}
+  class="btn {% if variante == 'primario' %}btn-primary{% elif variante == 'peligro' %}btn-peligro{% elif variante == 'fantasma' %}btn-ghost{% else %}btn-secundario{% endif %}{% if etiqueta %} btn-sm-icono{% endif %}{% if bloque %} w-full{% endif %}"
+  {% if etiqueta %}aria-label="{{ etiqueta }}"{% endif %} {{ attrs }}>
+  {% if icono %}<c-icono :nombre="icono" clase="size-5" />{% endif %}
+  {% if slot %}<span>{{ slot }}</span>{% endif %}
+  {% if not href %}<span data-enviando class="hidden" aria-hidden="true"><c-icono nombre="loader-circle" clase="size-4 animate-spin" /></span>{% endif %}
+{% if href %}</a>{% else %}</button>{% endif %}

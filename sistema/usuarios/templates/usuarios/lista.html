@@ -1,0 +1,62 @@
+{% extends "sistema/base.html" %}
+{% load ui %}
+{% block title %}Usuarios{% endblock %}
+{% block migas %}<li><span aria-current="page">Usuarios</span></li>{% endblock %}
+{% block titulo %}Usuarios{% endblock %}
+{% block subtitulo %}Quién puede entrar al sistema y con qué rol.{% endblock %}
+{% block acciones %}<c-boton variante="primario" icono="plus" href="{% url 'usuarios:nuevo' %}">Nuevo usuario</c-boton>{% endblock %}
+{% block content %}
+<div class="flex flex-col gap-4">
+<c-tarjeta>
+  <form method="get" role="search" class="filtros" data-sin-foco>
+    <div class="field !mb-0"><label for="q" class="lbl-f">Buscar</label><input class="input" id="q" type="search" name="q" value="{{ q }}" placeholder="Usuario o nombre"></div>
+    <div class="field !mb-0"><label for="rol" class="lbl-f">Rol</label><select class="select" id="rol" name="rol"><option value="">Todos los roles</option>{% for v, e in roles %}<option value="{{ v }}"{% if v == rol %} selected{% endif %}>{{ e }}</option>{% endfor %}</select></div>
+    <c-boton variante="primario" icono="search">Filtrar</c-boton>
+  </form>
+</c-tarjeta>
+<c-tarjeta>
+{% if usuarios %}
+<c-tabla titulo_accesible="Usuarios">
+  <thead><tr><th>Usuario</th><th class="col-sec">Nombre</th><th class="col-sec">Rol</th><th>Estado</th><th class="col-sec">Vínculo</th><th>Acciones</th></tr></thead>
+  <tbody>
+    {% for u in usuarios %}
+    <tr>
+      <td class="font-medium">{{ u.username }}{% if u.get_full_name %}<span class="sub-movil">{{ u.get_full_name }}</span>{% endif %}<span class="sub-movil">{{ u.rol_etiqueta }}</span></td>
+      <td class="col-sec">{{ u.get_full_name|default:u.username }}</td>
+      <td class="col-sec">{{ u.rol_etiqueta }}</td>
+      <td><div class="flex flex-wrap gap-1">{% if u.is_active %}{% badge "activo" "Activo" %}{% else %}{% badge "inactivo" "Desactivado" %}{% endif %}{% if u.bloqueado %}{% badge "error" "Bloqueado" %}{% endif %}</div></td>
+      <td class="col-sec">{% if u.perfil.nombre_profesional_dentalink %}Dentalink: {{ u.perfil.nombre_profesional_dentalink }}{% endif %}{% if u.destinatario %} Destinatario: {{ u.destinatario.nombre }}{% endif %}{% if not u.perfil.nombre_profesional_dentalink and not u.destinatario %}—{% endif %}</td>
+      <td>
+        <div class="flex flex-col items-start md:flex-row md:flex-wrap md:items-center md:gap-x-3">
+          <c-boton variante="fantasma" href="{% url 'usuarios:editar' u.pk %}">Editar</c-boton>
+          <c-boton variante="fantasma" href="{% url 'auditoria:historial' 'payment_instructions.user' u.pk %}">Historial</c-boton>
+          <c-boton variante="fantasma" href="{% url 'usuarios:contrasena' u.pk %}">Contraseña nueva</c-boton>
+          {% if u.bloqueado %}
+          <form method="post" action="{% url 'usuarios:desbloquear' u.pk %}">{% csrf_token %}
+            <c-boton variante="fantasma">Desbloquear</c-boton>
+          </form>
+          {% endif %}
+          <form method="post" action="{% url 'usuarios:activo' u.pk %}" id="activo-{{ u.pk }}">{% csrf_token %}
+            <input type="hidden" name="activo" value="{% if u.is_active %}0{% else %}1{% endif %}">
+            {% if u.is_active %}
+            <c-boton variante="fantasma" form="activo-{{ u.pk }}" data-confirmar-form="activo-{{ u.pk }}" data-confirmar-dialogo="conf-{{ u.pk }}" data-enviar-directo>Desactivar</c-boton>
+            {% else %}
+            <c-boton variante="fantasma">Activar</c-boton>
+            {% endif %}
+          </form>
+        </div>
+        {% if u.is_active %}<c-confirmar id="conf-{{ u.pk }}" titulo="Desactivar usuario" :texto="u.username" boton="Desactivar" />{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</c-tabla>
+{% else %}
+{% if q or rol %}<c-vacio icono="users" filtrado="1" limpiar="{% url 'usuarios:lista' %}" />
+{% else %}<c-vacio icono="users" texto="Todavía no hay usuarios.">
+  <c-slot name="accion"><c-boton variante="primario" href="{% url 'usuarios:nuevo' %}">Nuevo usuario</c-boton></c-slot>
+</c-vacio>{% endif %}
+{% endif %}
+</c-tarjeta>
+</div>
+{% endblock %}

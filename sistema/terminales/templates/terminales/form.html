@@ -1,0 +1,18 @@
+{% extends "sistema/base.html" %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block migas %}<li><a href="{% url 'terminales:lista' %}">Terminales POS</a></li><li aria-current="page">{{ titulo }}</li>{% endblock %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block content %}
+<form method="post" class="max-w-2xl"{% if editando %} data-sin-foco{% endif %}>
+<c-tarjeta>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+    <div class="mb-6"><c-alerta nivel="error">{% for e in form.non_field_errors %}{{ e }}{% if not forloop.last %} {% endif %}{% endfor %}</c-alerta></div>
+    {% endif %}
+    {% for campo in form %}
+      {% if campo.field.widget.input_type == "checkbox" %}<c-casilla :campo="campo" />{% else %}<c-campo :campo="campo" />{% endif %}
+    {% endfor %}
+</c-tarjeta>
+<c-pie-form :cancelar="cancelar" />
+</form>
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends "sistema/base.html" %}
+{% load pesos ui %}
+{% block title %}{{ destinatario.nombre }}{% endblock %}
+{% block migas %}<li><a href="{% url 'destinatarios:lista' %}">Destinatarios</a></li><li aria-current="page">{{ destinatario.nombre }}</li>{% endblock %}
+{% block titulo %}{{ destinatario.nombre }}{% endblock %}
+{% block subtitulo %}{% badge destinatario.estado destinatario.get_estado_display %}{% endblock %}
+{% block acciones %}
+  <c-boton variante="secundario" href="{% url 'auditoria:historial' 'destinatarios.destinatario' destinatario.pk %}">Historial</c-boton>
+  <c-boton variante="secundario" href="{% url 'destinatarios:editar' destinatario.pk %}">Editar</c-boton>
+{% endblock %}
+{% block content %}
+<div class="flex flex-col gap-6">
+  <c-tarjeta titulo="Datos">
+    <dl class="grid grid-cols-2 gap-x-8 gap-y-4 lg:grid-cols-3">
+      <div><dt class="text-sm text-ink-3">Tipo</dt><dd class="font-medium">{{ destinatario.get_tipo_display }}</dd></div>
+      <div><dt class="text-sm text-ink-3">CUIT o CUIL</dt><dd class="font-medium tabular-nums">{{ destinatario.cuit|default:"—" }}</dd></div>
+      <div><dt class="text-sm text-ink-3">Email</dt><dd class="font-medium break-all">{{ destinatario.email|default:"—" }}</dd></div>
+      <div><dt class="text-sm text-ink-3">Teléfono</dt><dd class="font-medium tabular-nums">{{ destinatario.telefono|default:"—" }}</dd></div>
+      {% if cupo %}
+      <div><dt class="text-sm text-ink-3">Tope</dt><dd class="font-medium tabular-nums">{{ cupo.tope|pesos }}</dd></div>
+      <div><dt class="text-sm text-ink-3">Recibido</dt><dd class="font-medium tabular-nums">{{ cupo.recibido|pesos }}</dd></div>
+      <div><dt class="text-sm text-ink-3">Consumido</dt><dd class="font-medium tabular-nums">{{ cupo.consumido|pesos }}</dd></div>
+      {% if cupo.excedente %}<div><dt class="text-sm text-ink-3">Excedente</dt><dd class="font-medium tabular-nums">{{ cupo.excedente|pesos }}</dd></div>{% endif %}
+      <div><dt class="text-sm text-ink-3">Restante</dt><dd class="font-medium tabular-nums">{{ cupo.restante|pesos }}</dd></div>
+      {% endif %}
+      <div><dt class="text-sm text-ink-3">Facturación activa</dt><dd class="font-medium">{% if destinatario.facturacion_activa %}Sí, emisor {{ destinatario.emisor }}{% else %}No{% endif %}</dd></div>
+      {% if destinatario.facturacion_activa and destinatario.emisor.estado != "activo" %}<div class="col-span-full"><c-alerta nivel="warning">El emisor está Inactivo: los cobros nuevos no se facturan.</c-alerta></div>{% endif %}
+    </dl>
+    <form method="post" action="{% url 'destinatarios:estado_destinatario' destinatario.pk %}" class="mt-6 flex flex-col gap-2 border-t border-line pt-6 sm:flex-row sm:items-center" data-sin-foco>
+      {% csrf_token %}
+      <select name="estado" aria-label="Estado" class="select sm:w-56">
+        {% for v, t in destinatario.Estado.choices %}<option value="{{ v }}"{% if v == destinatario.estado %} selected{% endif %}>{{ t }}</option>{% endfor %}
+      </select>
+      <c-boton variante="secundario">Cambiar estado</c-boton>
+    </form>
+  </c-tarjeta>
+
+  <section aria-labelledby="h-cuentas" class="flex flex-col gap-4">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 id="h-cuentas" class="text-lg font-semibold">Cuentas</h2>
+      <details class="dropdown dropdown-end">
+        <summary class="btn btn-primary"><c-icono nombre="plus" clase="size-5" /><span>Agregar cuenta</span></summary>
+        <ul class="menu dropdown-content z-10 mt-1 w-64 rounded-lg border border-line bg-surface p-2 shadow-lg">
+          <li><a href="{% url 'destinatarios:nueva_cuenta' destinatario.pk 'transferencia' %}">Cuenta de transferencia</a></li>
+          <li><a href="{% url 'destinatarios:nueva_cuenta' destinatario.pk 'terminal_pos' %}">Cuenta de terminal POS</a></li>
+          <li><a href="{% url 'destinatarios:nueva_cuenta' destinatario.pk 'efectivo' %}">Cuenta de efectivo</a></li>
+        </ul>
+      </details>
+    </div>
+    <c-mas-acciones cantidad="1">
+      <form method="post" id="desactivar-cuentas" action="{% url 'destinatarios:desactivar_cuentas' destinatario.pk %}">
+        {% csrf_token %}
+        <c-boton variante="peligro" form="desactivar-cuentas" data-confirmar-form="desactivar-cuentas" data-confirmar-dialogo="confirmar-desactivar">Desactivar todas las cuentas</c-boton>
+      </form>
+    </c-mas-acciones>
+    <div class="card2">
+    <c-tabla titulo_accesible="Cuentas de {{ destinatario.nombre }}">
+      <thead>
+        <tr>
+          <th>Cuenta</th><th class="col-sec">Topes</th><th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in cuentas %}
+        <tr>
+          <td>
+            <span class="font-medium">{{ c.get_tipo_display }}</span>
+            {% if c.alias %}<span class="block text-sm text-ink-2">Alias: {{ c.alias }}</span>{% endif %}
+            {% if c.cbu %}<span class="block text-sm tabular-nums text-ink-2">CBU o CVU: {{ c.cbu }}</span>{% endif %}
+            {% if c.proveedor %}<span class="block text-sm text-ink-2">Proveedor: {{ c.proveedor }}</span>{% endif %}
+          </td>
+          <td class="col-sec">
+            {% if c.tipo == "transferencia" %}
+            <dl class="w-64 text-sm">
+              <div class="flex justify-between gap-4"><dt class="text-ink-3">Tope mensual</dt><dd class="tabular-nums">{{ c.tope_mensual|pesos }}</dd></div>
+              <div class="flex justify-between gap-4"><dt class="text-ink-3">Tope semanal</dt><dd class="tabular-nums">{% if c.tope_semanal == 0 %}Sin tope{% else %}{{ c.tope_semanal|pesos }}{% endif %}</dd></div>
+              <div class="flex justify-between gap-4"><dt class="text-ink-3">Mínimo por pago</dt><dd class="tabular-nums">{% if c.minimo_por_pago == 0 %}Sin mínimo{% else %}{{ c.minimo_por_pago|pesos }}{% endif %}</dd></div>
+            </dl>
+            {% elif c.tipo == "terminal_pos" %}
+            <dl class="w-64 text-sm"><div class="flex justify-between gap-4"><dt class="text-ink-3">Objetivo</dt><dd class="tabular-nums">{{ c.objetivo|pesos }}</dd></div></dl>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% badge c.estado c.get_estado_display %}
+            <form method="post" action="{% url 'destinatarios:estado_cuenta' c.pk %}" class="mt-2 flex flex-wrap items-center gap-2" data-sin-foco>
+              {% csrf_token %}
+              <select name="estado" aria-label="Estado de la cuenta" class="select w-36">{% for v, t in c.Estado.choices %}<option value="{{ v }}"{% if v == c.estado %} selected{% endif %}>{{ t }}</option>{% endfor %}</select>
+              <c-boton variante="secundario" aria-label="Cambiar estado de {{ c }}">Cambiar estado</c-boton>
+            </form>
+            <div class="mt-1 flex flex-wrap gap-1">
+              <c-boton variante="fantasma" href="{% url 'destinatarios:editar_cuenta' c.pk %}">Editar</c-boton>
+              <c-boton variante="fantasma" href="{% url 'auditoria:historial' 'destinatarios.cuenta' c.pk %}">Historial</c-boton>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3"><c-vacio texto="Todavía no hay cuentas." /></td></tr>
+        {% endfor %}
+      </tbody>
+    </c-tabla>
+    </div>
+  </section>
+
+  <c-tarjeta titulo="Cupo por semana">
+    <form method="get" class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center" data-sin-foco>
+      <label for="f-mes" class="sr-only">Mes</label>
+      <input type="month" id="f-mes" name="mes" value="{{ mes|date:'Y-m' }}" class="input sm:w-56">
+      <c-boton variante="secundario">Ver mes</c-boton>
+    </form>
+    {% for c, filas in semanas %}
+    <div class="{% if not forloop.first %}mt-6{% endif %}">
+      <h3 class="mb-2 font-medium">{{ c }}</h3>
+      <c-tabla titulo_accesible="Cupo por semana de {{ c }}">
+        <thead><tr><th>Semana</th><th class="col-monto">Recibido</th><th class="col-monto">Reservado</th><th class="col-monto col-sec">Tope semanal</th><th class="col-monto">Cupo semanal</th></tr></thead>
+        <tbody>
+          {% for f in filas %}
+          <tr>
+            <td class="whitespace-nowrap tabular-nums">{{ f.inicio|date:"d/m" }}–{{ f.fin|date:"d/m" }}</td>
+            <td class="col-monto whitespace-nowrap">{{ f.recibido|pesos }}</td>
+            <td class="col-monto whitespace-nowrap">{{ f.reservado|pesos }}</td>
+            <td class="col-monto col-sec whitespace-nowrap">{% if f.cupo is None %}Sin tope{% else %}{{ f.tope|pesos }}{% endif %}</td>
+            <td class="col-monto whitespace-nowrap">{% if f.cupo is None %}Sin tope{% else %}{{ f.cupo|pesos }}{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </c-tabla>
+    </div>
+    {% empty %}
+    <c-vacio texto="Sin cuentas de transferencia." />
+    {% endfor %}
+  </c-tarjeta>
+
+  <c-tarjeta titulo="Reglas de automatización">
+    {% if reglas %}
+    <c-tabla titulo_accesible="Reglas de automatización de {{ destinatario.nombre }}">
+      <thead><tr><th>Nombre</th><th class="col-sec">Cuenta</th><th>Estado</th><th class="col-sec">Día y hora</th><th class="col-sec max-lg:hidden">Acción</th><th class="col-sec max-lg:hidden">Última ejecución</th></tr></thead>
+      <tbody>
+        {% for r in reglas %}
+        <tr>
+          <td class="font-medium">{{ r.nombre }}<span class="sub-movil">{{ r.get_disparador_display }}: {{ r.dia_texto }} · {{ r.hora|time:"H:i" }} · {{ r.accion_texto }}</span>
+            <a class="block text-sm text-brand-ink underline" href="{% url 'automatizacion:editar' r.pk %}">Editar</a></td>
+          <td class="col-sec">{{ r.cuenta }}</td>
+          <td>{% badge r.estado r.get_estado_display %}</td>
+          <td class="col-sec">{{ r.get_disparador_display }}: {{ r.dia_texto }}<span class="block text-sm tabular-nums text-ink-3">{{ r.hora|time:"H:i" }}</span></td>
+          <td class="col-sec max-lg:hidden">{{ r.accion_texto }}</td>
+          <td class="col-sec max-lg:hidden tabular-nums">{% include "automatizacion/_ultima.html" with e=r.ultima %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </c-tabla>
+    {% else %}
+    <c-vacio texto="Sin reglas." />
+    {% endif %}
+  </c-tarjeta>
+</div>
+<c-confirmar id="confirmar-desactivar" titulo="Desactivar todas las cuentas" texto="Ninguna cuenta de {{ destinatario.nombre }} recibe cobros hasta que la actives de nuevo." boton="Desactivar" />
+{% endblock %}

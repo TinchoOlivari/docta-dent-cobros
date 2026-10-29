@@ -1,0 +1,36 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+env/
+*.env
+
+# Django migrations (optional, can be included if needed)
+*/migrations/*.pyc
+*/migrations/*.py
+
+# Database files (SQLite)
+*.sqlite3
+
+# Static files (collected)
+staticfiles/
+media/
+
+# VS Code / IDE files
+.vscode/
+# OS files
+.DS_Store
+
+# Docker files
+Dockerfile
+docker-compose.override.yml
+
+# Specific
+*.md
+
+# Database
+    

@@ -1,0 +1,134 @@
+{% extends "sistema/base.html" %}
+{% load pesos ui %}
+{% block title %}{% if es_admin %}Cobros{% else %}Mis cobros{% endif %}{% endblock %}
+{% block migas %}<li><span aria-current="page">Cobros</span></li>{% endblock %}
+{% block titulo %}Cobros{% endblock %}
+{% block acciones %}{% if es_admin %}{% include "cobros/_exportar.html" %}{% endif %}<c-boton href="{% url 'dentalink:pacientes' %}" variante="primario" icono="plus">Nuevo cobro</c-boton>{% endblock %}
+{% block content %}
+<div class="card2" {% if es_admin %}x-data="seleccion"{% endif %}>
+{% if es_admin %}
+  <form method="get" action="{% url 'cobros:lista' %}" role="search" id="filtros-cobros" class="border-b border-line p-4 sm:px-6"
+        hx-get="{% url 'cobros:lista' %}" hx-target="#tabla-cobros" hx-push-url="true" hx-indicator="#cargando-tabla">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div class="w-full min-w-0 md:w-1/3">
+        <label for="{{ filtro.form.q.id_for_label }}" class="lbl-f !mb-1 text-sm">Buscar cobro</label>
+        <input type="search" class="input" name="q" id="{{ filtro.form.q.id_for_label }}" value="{{ filtro.form.q.value|default:'' }}" autocomplete="off" placeholder="Por id, paciente, monto, destinatario, alias.">
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        {% include "cobros/_limpiar.html" %}
+        <c-boton variante="primario" icono="search">Filtrar</c-boton>
+      </div>
+    </div>
+    <details class="mt-3">
+      <summary class="inline-flex min-h-[44px] cursor-pointer items-center gap-2 text-sm font-medium underline">Más filtros</summary>
+      {# Filas de 1/3, 1/3, 1/3 · 1/3, 1/3, 1/3 · 1/4, 1/4, 1/2 en 12 columnas; una columna en celular. #}
+      <div class="mt-3 grid gap-3 md:grid-cols-12 md:gap-x-4">
+        {% include "cobros/_campo_filtro.html" with campo=filtro.form.destinatario ancho="md:col-span-4" %}
+        {% include "cobros/_campo_filtro.html" with campo=filtro.form.profesional ancho="md:col-span-4" %}
+        {% include "cobros/_campo_filtro.html" with campo=filtro.form.creador ancho="md:col-span-4" %}
+        {% include "cobros/_campo_filtro.html" with campo=filtro.form.estado ancho="md:col-span-4" %}
+        {% include "cobros/_campo_filtro.html" with campo=filtro.form.metodo ancho="md:col-span-4" %}
+        {% include "cobros/_campo_filtro.html" with campo=filtro.form.revisado ancho="md:col-span-4" %}
+        {% include "cobros/_campo_filtro.html" with campo=filtro.form.desde ancho="md:col-span-3" %}
+        {% include "cobros/_campo_filtro.html" with campo=filtro.form.hasta ancho="md:col-span-3" %}
+        {% include "cobros/_campo_filtro.html" with campo=filtro.form.estado_envio ancho="md:col-span-6" %}
+      </div>
+      <div class="mt-3 flex flex-wrap gap-x-6">
+        {% for campo in filtro.form.visible_fields %}
+          {% if campo.field.widget.input_type == "checkbox" %}
+        <label class="inline-flex min-h-[44px] items-center gap-2 text-sm">{{ campo }} {{ campo.label }}</label>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </details>
+  </form>
+  <form id="elegidos" method="post" action="{% url 'reportes:cobros_elegidos' %}" data-descarga data-action-original="{% url 'reportes:cobros_elegidos' %}" data-sin-foco hidden>
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next_url }}">
+    <input type="hidden" name="formato" id="elegidos-formato" value="csv">
+    <input type="hidden" name="por" id="elegidos-por" value="cobro">
+  </form>
+  <div class="flex items-center border-b border-line px-4 py-2 sm:px-6" x-show="n > 0" x-cloak>
+    <c-menu texto="Acciones" contador="n" deshabilitado="n === 0">
+      <li><button type="submit" form="elegidos" name="accion" value="descargar" formaction="{% url 'reportes:cobros_elegidos' %}" x-on:click="document.getElementById('elegidos-formato').value = 'csv'; document.getElementById('elegidos-por').value = 'cobro'">Descargar CSV</button></li>
+      <li><button type="submit" form="elegidos" name="accion" value="descargar" formaction="{% url 'reportes:cobros_elegidos' %}" x-on:click="document.getElementById('elegidos-formato').value = 'xlsx'; document.getElementById('elegidos-por').value = 'cobro'">Descargar Excel</button></li>
+      <li><button type="submit" form="elegidos" name="accion" value="descargar" formaction="{% url 'reportes:cobros_elegidos' %}" x-on:click="document.getElementById('elegidos-formato').value = 'csv'; document.getElementById('elegidos-por').value = 'item'">Descargar CSV por ítem</button></li>
+      <li><button type="submit" form="elegidos" name="accion" value="descargar" formaction="{% url 'reportes:cobros_elegidos' %}" x-on:click="document.getElementById('elegidos-formato').value = 'xlsx'; document.getElementById('elegidos-por').value = 'item'">Descargar Excel por ítem</button></li>
+      <li><button type="submit" form="elegidos" name="accion" value="comprobantes" formaction="{% url 'reportes:cobros_elegidos' %}">Descargar comprobantes</button></li>
+      <li><button type="submit" form="elegidos" name="accion" value="copiar" formaction="{% url 'reportes:cobros_elegidos' %}">Copiar al portapapeles</button></li>
+      <li><button type="submit" form="elegidos" formaction="{% url 'cobros:revisado_lote' %}" x-on:click="$el.form.action = $el.getAttribute('formaction')">Marcar revisados</button></li>
+      {# `requestSubmit()` del diálogo no manda el botón: el clic fija la acción antes de confirmar. #}
+      <li><button type="submit" form="elegidos" formaction="{% url 'cobros:cancelar_lote' %}" x-on:click="$el.form.action = $el.getAttribute('formaction')" data-confirmar-form="elegidos" data-confirmar-dialogo="confirmar-cancelar-lote">Cancelar elegidos</button></li>
+    </c-menu>
+  </div>
+  <c-confirmar id="confirmar-cancelar-lote" titulo="Cancelar los cobros elegidos" texto="Cada cobro queda en su historial." boton="Cancelar elegidos">
+    <div class="space-y-3" x-data="resumenLote">
+      <p class="font-medium" role="status" data-resumen-lote>Solo se cancelan los Pendiente.</p>
+      <div><label for="lote-motivo" class="lbl-f">Motivo</label>
+      <select class="select" id="lote-motivo" name="motivo" form="elegidos">
+        <option value="" selected>Elegí un motivo</option>
+        {% for valor, etiqueta in motivos %}<option value="{{ valor }}">{{ etiqueta }}</option>{% endfor %}
+      </select></div>
+      <div><label for="lote-detalle" class="lbl-f">Detalle</label>
+      <textarea class="textarea" id="lote-detalle" name="detalle" form="elegidos" rows="2" placeholder="Detalle (obligatorio con «Otro»)"></textarea></div>
+    </div>
+  </c-confirmar>
+{% else %}
+  <form method="get" action="{% url 'cobros:lista' %}" role="search" id="filtros-cobros" class="border-b border-line p-4 sm:px-6"
+        hx-get="{% url 'cobros:lista' %}" hx-target="#tabla-cobros" hx-push-url="true" hx-indicator="#cargando-tabla">
+    <div class="filtros-llenan">
+      <div class="min-w-0">
+        <label for="{{ filtro.form.q.id_for_label }}" class="lbl-f !mb-1 text-sm">Buscar cobro</label>
+        <input type="search" class="input" name="q" id="{{ filtro.form.q.id_for_label }}" value="{{ filtro.form.q.value|default:'' }}" autocomplete="off" aria-describedby="ayuda-buscar">
+        <p id="ayuda-buscar" class="mt-1 text-sm text-ink-3">Número o nombre del paciente.</p>
+      </div>
+      <div class="filtro-fijo">
+        <span id="estado-rotulo" class="lbl-f !mb-1 text-sm">Estado</span>
+        <div class="filter" role="radiogroup" aria-labelledby="estado-rotulo">
+          {% for r in filtro.form.estado %}<input class="btn{% if not r.data.value %} filter-reset{% endif %}" type="radio" name="estado" value="{{ r.data.value }}" aria-label="{{ r.data.label }}"{% if r.data.selected %} checked{% endif %}>{% endfor %}
+        </div>
+      </div>
+      <div class="filtro-fijo ml-auto flex flex-wrap items-center gap-3">
+        {% include "cobros/_limpiar.html" %}
+        <c-boton variante="primario" icono="search">Filtrar</c-boton>
+      </div>
+    </div>
+  </form>
+{% endif %}
+  <div id="tabla-cobros" class="relative">{% include "cobros/_tabla.html" %}</div>
+</div>
+{% endblock %}
+{% block scripts %}{% if es_admin %}
+<script>
+// Resumen del diálogo "Cancelar elegidos" (021/FR-021): cuenta los Pendientes elegidos y suma sus
+// centavos enteros (`data-monto-centavos`), sin decimales de JS.
+document.addEventListener("alpine:init", function () {
+  window.Alpine.data("resumenLote", function () {
+    return {
+      init: function () {
+        var dialogo = this.$el.closest("dialog");
+        var self = this;
+        new MutationObserver(function () { if (dialogo.open) self.actualizar(dialogo); })
+          .observe(dialogo, { attributes: true, attributeFilter: ["open"] });
+      },
+      actualizar: function (dialogo) {
+        var cantidad = 0, centavos = 0;
+        document.querySelectorAll('input[name="pk"]:checked').forEach(function (c) {
+          var f = c.closest("[data-estado]");
+          if (f && f.dataset.estado === "pendiente") {
+            cantidad += 1;
+            centavos += parseInt(f.dataset.montoCentavos, 10);
+          }
+        });
+        var dec = String(centavos % 100);
+        var monto = "$" + window.formatearMonto(Math.floor(centavos / 100) + "," + (dec.length < 2 ? "0" + dec : dec), true);
+        this.$el.querySelector("[data-resumen-lote]").textContent = cantidad === 0
+          ? "No hay cobros Pendientes entre los elegidos."
+          : "Se cancelan " + cantidad + (cantidad === 1 ? " cobro Pendiente por " : " cobros Pendientes por ") + monto + ".";
+        dialogo.querySelector("[data-confirmar]").disabled = cantidad === 0;
+      },
+    };
+  });
+});
+</script>
+{% endif %}{% endblock %}

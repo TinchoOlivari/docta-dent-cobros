@@ -1,0 +1,5 @@
+<c-vars nivel="info" titulo="" />
+<div class="alert alert-soft {% if nivel == 'error' %}alert-error{% elif nivel == 'warning' %}alert-warning{% elif nivel == 'success' %}alert-success{% else %}alert-info{% endif %}"{% if nivel == "error" %} role="alert"{% endif %} {{ attrs }}>
+  {% if nivel == "error" %}<c-icono nombre="circle-alert" />{% elif nivel == "warning" %}<c-icono nombre="triangle-alert" />{% elif nivel == "success" %}<c-icono nombre="circle-check" />{% else %}<c-icono nombre="info" />{% endif %}
+  <div>{% if titulo %}<b>{{ titulo }}</b> {% endif %}{{ slot }}</div>
+</div>

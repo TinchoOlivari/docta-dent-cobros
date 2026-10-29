@@ -1,0 +1,25 @@
+{% load ui %}
+<c-tarjeta>
+{% if eventos %}
+<c-tabla titulo_accesible="Eventos de auditoría">
+  <thead><tr><th>Fecha</th><th class="col-sec">Usuario</th><th>Tipo y entidad</th><th class="col-sec max-lg:hidden">IP</th><th class="col-sec max-2xl:hidden">Dispositivo</th><th>Cambios</th><th class="col-sec">Resultado</th></tr></thead>
+  <tbody>
+    {% for e in eventos %}
+    <tr>
+      <td class="tabular-nums">{{ e.fecha|date:"d/m/Y H:i:s" }}<small class="sub-movil">{{ e.quien }}</small></td>
+      <td class="col-sec">{{ e.quien }}</td>
+      <td>{{ e.get_tipo_display }}<span class="block text-sm text-ink-3">{% if e.entidad %}{{ e.etiqueta_entidad }} {{ e.entidad_id }}{% else %}—{% endif %}</span>
+        <small class="block text-ink-3 2xl:hidden">{% if e.ip %}{{ e.ip }}{% endif %}{% if e.dispositivo %} · <span title="{{ e.dispositivo }}">{{ e.dispositivo|dispositivo_corto }}</span>{% endif %}</small>
+        <span class="sub-movil">{% if e.exito is not None %}{% if e.exito %}{% badge "ok" "Éxito" %}{% else %}{% badge "error" "Falla" %}{% endif %}{% endif %}</span></td>
+      <td class="col-sec max-lg:hidden">{{ e.ip|default:"—" }}</td>
+      <td class="col-sec max-2xl:hidden" {% if e.dispositivo %}title="{{ e.dispositivo }}"{% endif %}>{{ e.dispositivo|dispositivo_corto|default:"—" }}</td>
+      <td class="xl:min-w-96 max-w-lg text-sm whitespace-normal [overflow-wrap:anywhere]">{% for campo, anterior, nuevo in e.lineas|slice:":6" %}<div>{{ campo }}: {{ anterior }} → {{ nuevo }}</div>{% endfor %}{% if e.lineas|length > 6 %}<details><summary class="flex min-h-[44px] cursor-pointer items-center text-sm text-ink-3">Ver todo</summary>{% for campo, anterior, nuevo in e.lineas|slice:"6:" %}<div>{{ campo }}: {{ anterior }} → {{ nuevo }}</div>{% endfor %}</details>{% endif %}</td>
+      <td class="col-sec">{% if e.exito is not None %}{% if e.exito %}{% badge "ok" "Éxito" %}{% else %}{% badge "error" "Falla" %}{% endif %}{% endif %}{% if e.detalle %}<span class="block text-sm text-ink-3">{{ e.detalle }}</span>{% endif %}{% if e.exito is None and not e.detalle %}—{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</c-tabla>
+{% else %}
+<c-vacio icono="shield-check" texto="Todavía no hay eventos." :filtrado="filtrado" :limpiar="limpiar" />
+{% endif %}
+</c-tarjeta>

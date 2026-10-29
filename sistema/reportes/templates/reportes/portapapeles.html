@@ -1,0 +1,16 @@
+{% extends "sistema/base.html" %}
+{% block title %}Copiar al portapapeles{% endblock %}
+{% block migas %}<li><a href="{% url 'cobros:lista' %}">Cobros</a></li><li><span aria-current="page">Copiar al portapapeles</span></li>{% endblock %}
+{% block titulo %}Copiar al portapapeles{% endblock %}
+{% block acciones %}
+<c-boton href="{% url 'cobros:lista' %}" icono="arrow-left">Volver al listado</c-boton>
+<c-boton variante="primario" tipo="button" icono="copy" data-copiar="{{ texto }}">Copiar</c-boton>
+{% endblock %}
+{% block content %}
+<c-tarjeta>
+  <div class="field !mb-0">
+    <label for="texto" class="lbl-f">Texto</label>
+    <textarea id="texto" readonly rows="12" class="textarea font-mono text-sm">{{ texto }}</textarea>
+  </div>
+</c-tarjeta>
+{% endblock %}

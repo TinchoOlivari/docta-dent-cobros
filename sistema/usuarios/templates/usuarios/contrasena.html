@@ -1,0 +1,20 @@
+{% extends "sistema/base.html" %}
+{% block title %}Contraseña nueva{% endblock %}
+{% block migas %}<li><a href="{% url 'usuarios:lista' %}">Usuarios</a></li><li><span aria-current="page">Contraseña nueva</span></li>{% endblock %}
+{% block titulo %}Contraseña nueva para {{ objetivo.username }}{% endblock %}
+{% block acciones %}<c-boton href="{% url 'usuarios:lista' %}" icono="arrow-left">Volver</c-boton>{% endblock %}
+{% block content %}
+<div class="max-w-xl"><c-tarjeta>
+<form method="post">
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+  <div class="mb-4"><c-alerta nivel="error">{% for e in form.non_field_errors %}{{ e }}{% if not forloop.last %} {% endif %}{% endfor %}</c-alerta></div>
+  {% endif %}
+  {% for campo in form %}<c-campo :campo="campo" />{% endfor %}
+  <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+    <c-boton href="{% url 'usuarios:lista' %}">Volver</c-boton>
+    <c-boton variante="primario">Guardar</c-boton>
+  </div>
+</form>
+</c-tarjeta></div>
+{% endblock %}

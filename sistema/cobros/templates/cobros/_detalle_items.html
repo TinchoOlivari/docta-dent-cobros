@@ -1,0 +1,23 @@
+{% load pesos ui %}
+  <section class="card2" aria-labelledby="h-items">
+    <div class="hd"><h2 id="h-items">Ítems</h2>{% if puede_completar %}<c-boton href="{% url 'cobros:items' cobro.pk %}" variante="secundario" icono="plus">Vincular con Dentalink</c-boton>{% endif %}</div>
+    {% if items %}
+    <c-tabla titulo_accesible="Ítems del cobro">
+      <thead><tr><th scope="col" class="col-sec">N°</th><th scope="col">Prestación</th><th scope="col" class="col-sec">Profesional</th><th scope="col" class="col-monto">Monto</th>{% if es_admin %}<th scope="col" class="col-sec"><span class="sr-only">Historial</span></th>{% endif %}</tr></thead>
+      <tbody>
+        {% for i in items %}
+        <tr id="item-{{ i.numero }}">
+          <td class="col-sec whitespace-nowrap tabular-nums">{{ i.referencia }}</td>
+          <td>{% if i.saldo_a_favor %}Saldo a favor{% else %}{{ i.nombre_prestacion }}{% endif %}<small class="block text-ink-3">{{ i.nombre_tratamiento }}</small><small class="sub-movil">{{ i.nombre_profesional }}</small></td>
+          <td class="col-sec">{{ i.nombre_profesional }}</td>
+          <td class="col-monto whitespace-nowrap font-medium">{{ i.monto|pesos }}</td>
+          {% if es_admin %}<td class="col-sec"><a class="link text-brand-ink inline-flex min-h-[44px] items-center" href="{% url 'auditoria:historial' 'cobros.itemcobro' i.pk %}" aria-label="Historial del ítem {{ i.referencia }}"><c-icono nombre="clock" /></a></td>{% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </c-tabla>
+    {% else %}
+    <div class="bd2"><c-vacio texto="Sin ítems." /></div>
+    {% endif %}
+  </section>
+

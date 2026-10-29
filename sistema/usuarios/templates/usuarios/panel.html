@@ -1,0 +1,61 @@
+{% extends "sistema/base.html" %}
+{% load pesos ui %}
+{% block title %}Panel{% endblock %}
+{% block migas %}<li><span aria-current="page">Panel</span></li>{% endblock %}
+{% block titulo %}Panel{% endblock %}
+{% block subtitulo %}Casos por revisar, cobrado y terminales POS.{% endblock %}
+{% block acciones %}<c-boton variante="primario" icono="plus" href="{% url 'dentalink:pacientes' %}">Nuevo cobro</c-boton>{% endblock %}
+{% block content %}
+<div class="flex flex-col gap-6">
+  {% if sin_direcciones %}<c-alerta nivel="warning">No hay direcciones. Ningún aviso se envía. <a class="inline-flex min-h-11 items-center underline" href="{% url 'avisos:configuracion' %}">Agregar una dirección</a></c-alerta>{% endif %}
+  <section aria-labelledby="h-pend">
+    <h2 id="h-pend" class="sr-only">Pendientes</h2>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {% for texto, n, href in pendientes %}
+      <a href="{{ href }}" class="card2 block p-4 no-underline min-h-11 {% if n > 0 %}border-warn-bar bg-warn-bg{% endif %}" {% if n > 0 %}data-tono="alerta"{% endif %}>
+        <span class="flex items-center gap-2 text-sm {% if n > 0 %}text-warn{% else %}text-ink-2{% endif %}">
+          {% if n > 0 %}<c-icono nombre="triangle-alert" />{% else %}<c-icono nombre="circle-check" />{% endif %}{{ texto }}
+        </span>
+        <span class="mt-2 block text-3xl font-semibold tabular-nums {% if n > 0 %}text-warn{% else %}text-ink{% endif %}">{{ n }}</span>
+        <span class="mt-1 block text-sm text-ink-3">{% if n > 0 %}Ver los casos{% else %}Nada pendiente{% endif %}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section aria-labelledby="h-cobrado">
+    <h2 id="h-cobrado" class="sr-only">Cobrado</h2>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <a href="{{ href_hoy }}" data-cobrado="hoy" class="card2 block p-4 no-underline min-h-11">
+        <span class="block text-sm text-ink-2">Cobrado hoy</span>
+        <span class="mt-2 block text-3xl font-semibold tabular-nums text-ink">{{ cobrado_hoy|pesos }}</span>
+      </a>
+      <a href="{{ href_mes }}" data-cobrado="mes" class="card2 block p-4 no-underline min-h-11">
+        <span class="block text-sm text-ink-2">Cobrado en el mes</span>
+        <span class="mt-2 block text-3xl font-semibold tabular-nums text-ink">{{ cobrado_mes|pesos }}</span>
+      </a>
+    </div>
+  </section>
+
+  <c-tarjeta titulo="Información de POS" id="pos">
+    {% if pos %}
+    <div role="region" aria-label="Información de POS" class="max-h-44 overflow-y-auto">
+      <ul class="m-0 list-none divide-y divide-line p-0">
+        {% for s in pos %}
+        <li class="h-22">
+          <a href="{% url 'terminales:detalle' s.terminal_id %}" class="block h-full overflow-hidden py-2 no-underline">
+            <span class="block truncate font-semibold">{{ s.terminal.nombre }} - cuenta: {{ s.cuenta.destinatario.nombre }}</span>
+            <div class="max-w-[480px]">{% barra s.cobrado s.objetivo etiqueta="Objetivo de "|add:s.terminal.nombre tonos=True texto=False %}</div>
+            <span class="block text-sm tabular-nums text-ink-2">Cobrado {{ s.cobrado|pesos }} · Objetivo {{ s.objetivo|pesos }}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% else %}
+    <c-vacio texto="No hay terminales POS con una cuenta abierta." />
+    {% endif %}
+  </c-tarjeta>
+
+</div>
+{% endblock %}

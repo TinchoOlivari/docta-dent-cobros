@@ -1,0 +1,22 @@
+{% extends "sistema/base.html" %}
+{% block title %}Auditoría{% endblock %}
+{% block migas %}<li><span aria-current="page">Auditoría</span></li>{% endblock %}
+{% block titulo %}Auditoría{% endblock %}
+{% block subtitulo %}Quién hizo qué y cuándo. Solo se lee, no se edita.{% endblock %}
+{% block content %}
+<div class="flex flex-col gap-6">
+<c-tarjeta titulo="Filtros">
+  <form method="get" data-sin-foco>
+    {% if form.non_field_errors %}
+    <div class="mb-4"><c-alerta nivel="error">{{ form.non_field_errors.0 }}</c-alerta></div>
+    {% endif %}
+    <div class="filtros">
+      {% for campo in form %}<c-campo :campo="campo" />{% endfor %}
+      <c-boton variante="primario" icono="search">Filtrar</c-boton>
+    </div>
+  </form>
+</c-tarjeta>
+{% include "auditoria/_tabla.html" with eventos=pagina filtrado=filtrado limpiar=limpiar %}
+<c-paginacion :pagina="pagina" :query="filtros" nombre="eventos" />
+</div>
+{% endblock %}

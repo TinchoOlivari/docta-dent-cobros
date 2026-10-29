@@ -1,0 +1,59 @@
+{% extends "sistema/base.html" %}
+{% load ui %}
+{% block title %}Reglas de automatización{% endblock %}
+{% block migas %}<li aria-current="page">Reglas de automatización</li>{% endblock %}
+{% block titulo %}Reglas de automatización{% endblock %}
+{% block subtitulo %}Cambian la prioridad o el estado de una cuenta en un día y hora fijos.{% endblock %}
+{% block acciones %}<c-boton variante="primario" href="{% url 'automatizacion:nueva' %}" icono="plus">Nueva regla</c-boton>{% endblock %}
+{% block content %}
+<div class="flex flex-col gap-4">
+<c-tarjeta>
+  <form method="get" role="search" class="filtros" data-sin-foco>
+    <div class="field !mb-0"><label for="q" class="lbl-f">Buscar</label><input class="input" id="q" type="search" name="q" value="{{ q }}" placeholder="Regla, alias o destinatario"></div>
+    <div class="field !mb-0"><label for="f-estado" class="lbl-f">Estado</label><select class="select" id="f-estado" name="estado"><option value="">Todos</option>{% for v, e in filtros.estado.1 %}<option value="{{ v }}"{% if v == filtros.estado.0 %} selected{% endif %}>{{ e }}</option>{% endfor %}</select></div>
+    <div class="field !mb-0"><label for="f-disparador" class="lbl-f">Disparador</label><select class="select" id="f-disparador" name="disparador"><option value="">Todos</option>{% for v, e in filtros.disparador.1 %}<option value="{{ v }}"{% if v == filtros.disparador.0 %} selected{% endif %}>{{ e }}</option>{% endfor %}</select></div>
+    <div class="field !mb-0"><label for="f-accion" class="lbl-f">Acción</label><select class="select" id="f-accion" name="accion"><option value="">Todas</option>{% for v, e in filtros.accion.1 %}<option value="{{ v }}"{% if v == filtros.accion.0 %} selected{% endif %}>{{ e }}</option>{% endfor %}</select></div>
+    <c-boton variante="primario" icono="search">Filtrar</c-boton>
+    {% if filtrado %}<c-boton variante="secundario" href="{% url 'automatizacion:lista' %}">Limpiar filtros</c-boton>{% endif %}
+  </form>
+</c-tarjeta>
+{% if reglas %}
+<div class="flex flex-col gap-4" x-data="seleccion">
+  <section class="card2">
+    <c-elegidos id="elegidos-reglas" action="{% url 'automatizacion:estado' %}">
+      <c-boton variante="primario" nombre="estado" valor="activa">Activar</c-boton>
+      <c-boton variante="secundario" nombre="estado" valor="inactiva">Desactivar</c-boton>
+    </c-elegidos>
+    <c-tabla titulo_accesible="Reglas de automatización">
+      <thead>
+        <tr>
+          <th><span class="sr-only">Elegir</span></th><th>Nombre</th><th class="col-sec">Cuenta</th><th>Estado</th>
+          <th class="col-sec">Disparador y hora</th><th class="col-sec">Acción</th><th class="col-sec max-lg:hidden">Qué hace</th>
+          <th class="col-sec max-lg:hidden">Última ejecución</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in reglas %}
+        <tr>
+          <td><label class="flex min-h-11 min-w-11 items-center justify-center"><input type="checkbox" name="pks" form="elegidos-reglas" value="{{ r.pk }}" aria-label="Elegir {{ r.nombre }}"></label></td>
+          <td class="font-medium">{{ r.nombre }}<span class="sub-movil">{{ r.descripcion }}</span><span class="sub-movil">{{ r.get_disparador_display }}: {{ r.dia_texto }} · {{ r.hora|time:"H:i" }} · {{ r.accion_texto }}</span>
+            <span class="mt-1 flex flex-wrap gap-x-4"><a class="text-sm text-brand-ink underline" href="{% url 'automatizacion:editar' r.pk %}">Editar</a><a class="text-sm text-brand-ink underline" href="{% url 'auditoria:historial' 'automatizacion.regla' r.pk %}">Historial</a></span></td>
+          <td class="col-sec">{{ r.cuenta }}</td>
+          <td>{% badge r.estado r.get_estado_display %}</td>
+          <td class="col-sec">{{ r.get_disparador_display }}: {{ r.dia_texto }}<span class="block text-sm tabular-nums text-ink-3">{{ r.hora|time:"H:i" }}</span></td>
+          <td class="col-sec">{{ r.accion_texto }}</td>
+          <td class="col-sec max-lg:hidden">{{ r.descripcion }}</td>
+          <td class="col-sec max-lg:hidden tabular-nums">{% include "automatizacion/_ultima.html" with e=r.ultima %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </c-tabla>
+  </section>
+</div>
+{% else %}
+<c-vacio texto="Todavía no hay reglas.">
+  <c-slot name="accion"><c-boton variante="primario" href="{% url 'automatizacion:nueva' %}" icono="plus">Nueva regla</c-boton></c-slot>
+</c-vacio>
+{% endif %}
+</div>
+{% endblock %}

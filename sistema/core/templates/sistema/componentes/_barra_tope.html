@@ -1,0 +1,10 @@
+{% load pesos %}
+{% if dibujar %}
+<div class="min-w-32">
+  <div role="progressbar" aria-label="{{ etiqueta }}: {{ valor|pesos }} de {{ total|pesos }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ porcentaje }}" class="bar{% if excedido or tono == 'rojo' %} err{% elif tono == 'amarillo' %} warn{% endif %}">
+    <i style="width: {{ porcentaje }}%"></i>
+  </div>
+  {% if texto_tono %}<span class="sr-only">{{ texto_tono }}</span>{% endif %}
+  {% if texto %}<p class="mt-1 text-xs tabular-nums {% if excedido %}text-err{% else %}text-ink-3{% endif %}">{{ valor|pesos }} de {{ total|pesos }}{% if excedido %} <span class="sr-only">(excedido)</span>{% endif %}</p>{% endif %}
+</div>
+{% endif %}

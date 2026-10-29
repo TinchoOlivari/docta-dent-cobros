@@ -1,0 +1,1738 @@
+/*
+ * Fuente del CSS de Docta Dent (016). Se compila con `make css` (Tailwind 4.3.3 + daisyUI 5.7.50).
+ * Este es el ÚNICO archivo que puede tener colores hexadecimales (FR-001).
+ * Los tokens se nombran por rol: un tema `docta-oscuro` futuro solo cambia valores.
+ */
+@import "tailwindcss" source(none);
+@source not "./daisyui{,*}.mjs";
+@source "../../*/templates/**/*.html";
+@source "../static/sistema/js/app.js";
+@source "../static/sistema/js/orden.js";
+/* Los .svg llevan `shrink-0`: sin este @source el ícono se aplasta junto a un texto largo (018/FR-001). */
+@source "../templates/iconos/*.svg";
+
+@plugin "./daisyui.mjs" {
+  themes: false;
+}
+
+/* Tokens por rol. Pares de contraste medidos en sistema/core/tests/test_contraste.py (FR-002). */
+@theme static {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --color-page: #F5F7F4;
+  --color-surface: #FFFFFF;
+  --color-elevated: #EEF2EC;
+  --color-hover: #F0F4EE;
+  --color-thead: #F8FAF7;
+  --color-line: #DCE3DD;
+  /* Solo divisores: da 2,11:1 sobre blanco, no sirve de borde de campo. */
+  --color-line-strong: #A9B6AC;
+  /* Borde de campo: 3,25:1 sobre blanco (research P11). */
+  --color-field-line: #859288;
+
+  --color-ink: #16201A;
+  --color-ink-2: #44524A;
+  --color-ink-3: #566359;
+
+  --color-brand: #A4D468;
+  --color-on-brand: #14210F;
+  --color-brand-hover: #93C558;
+  --color-brand-ink: #3B6B0F;
+  --color-brand-soft: #F0F8E4;
+
+  --color-err: #B42318;
+  --color-err-bg: #FDECEA;
+  --color-err-bar: #E5645A;
+  --color-ok: #2F6B12;
+  --color-ok-bg: #E6F4D3;
+  --color-warn: #85530A;
+  --color-warn-bg: #FFF0CF;
+  --color-warn-bar: #E9B44C;
+
+  --color-track: #E6EBE6;
+  --color-focus: #2F6B12;
+  --color-nav-active-bg: #EAF5D8;
+  --color-nav-active-text: #1F3D08;
+  --color-scrim: #16201A;
+  --color-hero-from: #A4D468;
+  --color-hero-to: #CDE9A5;
+
+  /* Alto común de campos de una línea, select y botones (018/FR-002). */
+  --alto-control: 44px;
+
+  --radius-1: 4px;
+  --radius-2: 8px;
+  --radius-3: 12px;
+  --shadow-1: 0 1px 2px rgb(22 32 26 / 0.06);
+  --shadow-2: 0 4px 16px rgb(22 32 26 / 0.08);
+  --shadow-3: 0 16px 40px rgb(22 32 26 / 0.18);
+}
+
+/* Mapeo a daisyUI 5. Tamaño de campo: .275rem x 10 = 44 px de alto (FR-011). */
+@plugin "./daisyui-theme.mjs" {
+  name: "docta-claro";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+  --color-base-100: var(--color-surface);
+  --color-base-200: var(--color-page);
+  --color-base-300: var(--color-line);
+  --color-base-content: var(--color-ink);
+  --color-primary: var(--color-brand);
+  --color-primary-content: var(--color-on-brand);
+  --color-secondary: var(--color-elevated);
+  --color-secondary-content: var(--color-ink);
+  --color-accent: var(--color-brand-ink);
+  --color-accent-content: var(--color-surface);
+  --color-neutral: var(--color-elevated);
+  --color-neutral-content: var(--color-ink);
+  --color-info: var(--color-ink-2);
+  --color-info-content: var(--color-page);
+  --color-success: var(--color-ok);
+  --color-success-content: var(--color-page);
+  --color-warning: var(--color-warn);
+  --color-warning-content: var(--color-page);
+  --color-error: var(--color-err);
+  --color-error-content: var(--color-page);
+  --radius-selector: 8px;
+  --radius-field: 8px;
+  --radius-box: 12px;
+  --size-selector: 0.25rem;
+  --size-field: 0.275rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("../fonts/InterVariable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--color-page);
+    color: var(--color-ink);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+    border-radius: var(--radius-1);
+  }
+  [x-cloak] {
+    display: none !important;
+  }
+  /* Campos: borde de 3:1 y 44 px de alto (FR-002, FR-011). Los widgets de Django llegan sin clases. */
+  :is(input, select, textarea):not([type="checkbox"], [type="radio"], [type="file"], [type="hidden"], [type="submit"], [type="button"]) {
+    background: var(--color-surface);
+    color: var(--color-ink);
+    border: 1px solid var(--color-field-line);
+    border-radius: var(--radius-2);
+    height: var(--alto-control);
+    width: 100%;
+    padding: 0 12px;
+    font-size: 15px;
+  }
+  textarea {
+    height: auto;
+    min-height: 96px;
+    padding: 12px;
+  }
+  :is(input, select, textarea)::placeholder {
+    color: var(--color-ink-3);
+  }
+  :is(input, select, textarea):not([type="checkbox"], [type="radio"]):focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 1px;
+    border-color: var(--color-focus);
+  }
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--color-brand-ink);
+    flex: none;
+  }
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+  }
+  /* Área de toque de la casilla de una tabla (023/FR-001, FR-002): 44 px bajo 1024 px, 24 px desde 1024 px. */
+  .celda-casilla {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    cursor: pointer;
+  }
+  @media (min-width: 1024px) {
+    .celda-casilla {
+      width: 24px;
+      height: 24px;
+    }
+  }
+  input[type="radio"] {
+    width: 24px;
+    height: 24px;
+  }
+  input[aria-invalid="true"],
+  select[aria-invalid="true"],
+  textarea[aria-invalid="true"] {
+    border-color: var(--color-err);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+}
+
+@layer components {
+  .btn {
+    min-height: var(--alto-control);
+    font-weight: 500;
+    border-radius: var(--radius-2);
+    box-shadow: none;
+    gap: 8px;
+  }
+  .btn-sm-icono {
+    width: 44px;
+    padding: 0;
+  }
+  [data-enviando] {
+    display: none;
+  }
+  button:disabled [data-enviando] {
+    display: inline-block;
+  }
+
+  /* --- Utilidades de tabla del contrato (FR-012) --- */
+  @media (max-width: 767.98px) {
+    .col-sec {
+      display: none;
+    }
+  }
+  .col-monto {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .sub-movil {
+    display: block;
+    color: var(--color-ink-3);
+    font-size: 12px;
+  }
+  @media (min-width: 768px) {
+    .sub-movil {
+      display: none;
+    }
+  }
+
+  /* --- Shell --- */
+  .shell {
+    --sb-w: 264px; /* las etiquetas del menú entran en 1 línea a 1280 px (021/FR-059) */
+    min-height: 100vh;
+  }
+  .sb {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: var(--sb-w);
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-line);
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    gap: 16px;
+    z-index: 40;
+    overflow: hidden;
+    transition: width 0.15s;
+  }
+  .sb-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 0 4px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 16px;
+  }
+  .logo {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-2);
+    background: var(--color-brand);
+    color: var(--color-on-brand);
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex: none;
+  }
+  .nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .nav-h {
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-ink-3);
+    margin: 16px 12px 4px;
+  }
+  button.nav-h {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: calc(100% - 24px);
+    min-height: 44px;
+    margin: 4px 12px 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    font-weight: 600;
+    text-align: left;
+  }
+  button.nav-h svg {
+    transition: rotate 0.15s;
+  }
+  button.nav-h[aria-expanded="true"] svg {
+    rotate: 90deg;
+  }
+  .nav-sec-cuerpo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  /* La etiqueta larga se parte en 2 líneas; nunca se corta (018 fix). */
+  .nav a {
+    font-size: 14px;
+    line-height: 1.25;
+    padding-block: 8px;
+    overflow-wrap: anywhere;
+  }
+  .nav a svg {
+    flex: none;
+  }
+  .sb-foot {
+    flex: none;
+    background: var(--color-surface);
+  }
+  .nav a,
+  .sb-foot button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    padding: 0 12px;
+    border-radius: var(--radius-2);
+    text-decoration: none;
+    color: var(--color-ink-2);
+    font-weight: 500;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 500;
+    width: 100%;
+    text-align: left;
+  }
+  .nav a:hover,
+  .sb-foot button:hover {
+    background: var(--color-hover);
+    color: var(--color-ink);
+  }
+  .nav a[aria-current="page"] {
+    background: var(--color-nav-active-bg);
+    color: var(--color-nav-active-text);
+  }
+  .nav a[aria-current="page"] svg {
+    color: var(--color-brand-ink);
+  }
+  .user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 12px 8px;
+    border-top: 1px solid var(--color-line);
+  }
+  .ava {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--color-elevated);
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    font-weight: 600;
+    flex: none;
+    border: 1px solid var(--color-line);
+  }
+  .user small {
+    display: block;
+    color: var(--color-ink-3);
+    font-size: 12px;
+  }
+  .main {
+    margin-left: var(--sb-w);
+    padding: 24px 32px 48px;
+    max-width: 1400px;
+    transition: margin 0.15s;
+  }
+  /* Contenido centrado en el espacio libre a la derecha del menú, con su ancho máximo (021/FR-057). */
+  @media (min-width: 1024px) {
+    .main {
+      max-width: none;
+      padding-inline: max(32px, calc((100vw - var(--sb-w) - 1400px) / 2 + 32px));
+    }
+  }
+  .topbar,
+  .scrim {
+    display: none;
+  }
+  @media (min-width: 1024px) {
+    .shell.is-collapsed {
+      --sb-w: 72px;
+    }
+    /* El texto del destino sigue en el DOM (nombre accesible) pero no se ve. */
+    .shell.is-collapsed .lbl,
+    .shell.is-collapsed .nav a {
+      font-size: 0;
+      gap: 0;
+    }
+    .shell.is-collapsed .nav-h,
+    .shell.is-collapsed .user .who {
+      display: none;
+    }
+    .shell.is-collapsed .sb-brand {
+      justify-content: center;
+    }
+    .shell.is-collapsed .nav a,
+    .shell.is-collapsed .sb-foot button {
+      justify-content: center;
+      padding: 0;
+    }
+    .shell.is-collapsed .user {
+      justify-content: center;
+      padding-left: 0;
+      padding-right: 0;
+    }
+    .only-mobile {
+      display: none !important;
+    }
+  }
+  @media (max-width: 1023.98px) {
+    .sb {
+      transform: translateX(-100%);
+      visibility: hidden;
+      width: 280px;
+      transition: transform 0.2s, visibility 0.2s;
+      box-shadow: var(--shadow-3);
+    }
+    .drawer-open .sb {
+      transform: none;
+      visibility: visible;
+      transition: transform 0.2s, visibility 0s; /* visible ya: el foco entra al abrir */
+    }
+    .drawer-open .scrim {
+      display: block;
+      position: fixed;
+      inset: 0;
+      background: color-mix(in srgb, var(--color-scrim) 50%, transparent);
+      z-index: 30;
+    }
+    .main {
+      margin-left: 0;
+      padding: 16px 16px 96px;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 56px;
+      padding: 0 16px;
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-line);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .topbar .t {
+      font-weight: 600;
+      flex: 1;
+    }
+    .only-desktop {
+      display: none !important;
+    }
+  }
+  .icon-btn {
+    width: 44px;
+    height: 44px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: var(--radius-2);
+    border: 1px solid transparent;
+    background: none;
+    color: var(--color-ink-2);
+    cursor: pointer;
+    flex: none;
+  }
+  .icon-btn:hover {
+    background: var(--color-hover);
+    color: var(--color-ink);
+  }
+  .skip {
+    position: absolute;
+    left: 16px;
+    top: -64px;
+    background: var(--color-brand);
+    color: var(--color-on-brand);
+    padding: 8px 16px;
+    border-radius: var(--radius-1);
+    z-index: 100;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .skip:focus {
+    top: 8px;
+  }
+
+  /* --- Cabecera de página --- */
+  .crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    font-size: 13px;
+    color: var(--color-ink-3);
+    margin: -12px 0 -4px;
+    padding: 0;
+    list-style: none;
+  }
+  .crumbs a {
+    color: var(--color-ink-3);
+    text-decoration: none;
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    padding: 0 2px;
+  }
+  .crumbs li:first-child a {
+    min-width: 44px;
+  }
+  .crumbs a:hover {
+    color: var(--color-ink);
+    text-decoration: underline;
+  }
+  .crumbs li + li::before {
+    content: "/";
+    margin-right: 8px;
+    opacity: 0.6;
+  }
+  .ph {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .ph h1 {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 24px;
+    line-height: 32px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .ph .sub {
+    margin: 4px 0 0;
+    color: var(--color-ink-2);
+  }
+  .acts {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .acts:empty {
+    display: none;
+  }
+  /* "Más acciones": desplegable con flecha a la derecha que gira al abrir (021/FR-010). */
+  .mas-acciones {
+    flex-basis: 100%;
+  }
+  .mas-acciones > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 44px;
+    cursor: pointer;
+    list-style: none;
+    font-weight: 500;
+  }
+  .mas-acciones > summary::-webkit-details-marker {
+    display: none;
+  }
+  .mas-acciones > summary::after {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+    transition: transform 0.15s;
+  }
+  .mas-acciones[open] > summary::after {
+    transform: rotate(-135deg);
+  }
+  .ph:not(:has(h1)) {
+    margin-bottom: 0;
+  }
+  @media (max-width: 479.98px) {
+    .acts {
+      width: 100%;
+    }
+    .acts > * {
+      flex: 1 1 100%;
+    }
+  }
+
+  /* --- Tarjeta, tabla, paginación --- */
+  .card2 {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-3);
+    box-shadow: var(--shadow-1);
+  }
+  .card2 > .hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--color-line);
+  }
+  .card2 > .hd h2,
+  .card2 > .hd h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+  }
+  .card2 > .bd2 {
+    padding: 24px;
+  }
+  @media (max-width: 479.98px) {
+    .card2 > .bd2,
+    .card2 > .hd {
+      padding: 16px;
+    }
+  }
+  .tw {
+    overflow-x: auto;
+  }
+  table.t {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .t th {
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-ink-3);
+    font-weight: 600;
+    text-align: left;
+    padding: 12px 16px;
+    background: var(--color-thead);
+    border-bottom: 1px solid var(--color-line);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+  }
+  .t td {
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--color-line);
+    min-height: 44px;
+    vertical-align: middle;
+  }
+  .t tbody tr:hover td {
+    background: var(--color-hover);
+  }
+  .t th.col-monto {
+    text-align: right;
+  }
+  .t td a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  @media (max-width: 767.98px) {
+    .t {
+      font-size: 14px;
+    }
+    .t th,
+    .t td {
+      padding: 8px 4px;
+    }
+    .t .bd {
+      padding: 0 8px 0 6px;
+      gap: 4px;
+    }
+    .t th:first-child,
+    .t td:first-child {
+      padding-left: 12px;
+    }
+    .t th:last-child,
+    .t td:last-child {
+      padding-right: 12px;
+    }
+  }
+  /* Una tabla dentro de una tarjeta llega de borde a borde. */
+  .card2 > .bd2:has(> .tw) {
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+  }
+  .pager {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+  }
+
+  /* --- Badge y barra --- */
+  .bd {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 12px 0 8px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .bd svg {
+    width: 16px;
+    height: 16px;
+  }
+  .bd-ok {
+    background: var(--color-ok-bg);
+    color: var(--color-ok);
+  }
+  .bd-alerta {
+    background: var(--color-warn-bg);
+    color: var(--color-warn);
+  }
+  .bd-error {
+    background: var(--color-err-bg);
+    color: var(--color-err);
+  }
+  .bd-neutro {
+    background: var(--color-elevated);
+    color: var(--color-ink-2);
+  }
+  .bar {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--color-track);
+    overflow: hidden;
+  }
+  .bar > i {
+    display: block;
+    height: 100%;
+    background: var(--color-brand);
+  }
+  .bar.warn > i {
+    background: var(--color-warn-bar);
+  }
+  .bar.err > i {
+    background: var(--color-err-bar);
+  }
+
+  /* --- Campo, alerta, vacío, aviso, comprobantes --- */
+  .field {
+    margin-bottom: 24px;
+  }
+  .lbl-f {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .hint {
+    font-size: 13px;
+    color: var(--color-ink-3);
+    margin-top: 8px;
+  }
+  .err-msg {
+    display: flex;
+    gap: 8px;
+    color: var(--color-err);
+    font-size: 14px;
+    margin-top: 8px;
+    align-items: center;
+  }
+  .vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    padding: 40px 16px;
+    color: var(--color-ink-2);
+    border: 1px dashed var(--color-line-strong);
+    border-radius: var(--radius-3);
+  }
+  .drop {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+    padding: 32px 16px;
+    border: 2px dashed var(--color-field-line);
+    border-radius: var(--radius-3);
+    background: var(--color-surface);
+    cursor: pointer;
+    min-height: 152px;
+  }
+  .drop.on,
+  .drop:hover,
+  .drop:focus-within {
+    border-color: var(--color-brand-ink);
+    background: var(--color-brand-soft);
+  }
+  .drop input[type="file"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+  .file {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-2);
+    margin-top: 8px;
+    background: var(--color-surface);
+  }
+  .copyrow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 8px 8px 16px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-2);
+    background: var(--color-surface);
+  }
+  .copyrow code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+    font-variant-numeric: tabular-nums;
+  }
+  dl.kv {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin: 0;
+  }
+  @media (min-width: 640px) {
+    dl.kv {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  dl.kv dt {
+    font-size: 13px;
+    color: var(--color-ink-3);
+  }
+  dl.kv dd {
+    margin: 2px 0 0;
+    font-weight: 500;
+  }
+
+  /* --- HTMX: el indicador aparece a los 300 ms (FR-014) --- */
+  .htmx-indicator {
+    opacity: 0;
+    visibility: hidden;
+  }
+  .htmx-request .htmx-indicator,
+  .htmx-request.htmx-indicator {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity 100ms linear 300ms;
+  }
+
+  /* --- Login --- */
+  .login {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 900px) {
+    .login {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .login-side {
+    display: none;
+    padding: 48px;
+    background: linear-gradient(160deg, var(--color-hero-from), var(--color-hero-to));
+    color: var(--color-on-brand);
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  @media (min-width: 900px) {
+    .login-side {
+      display: flex;
+    }
+  }
+  .login-side .logo {
+    background: var(--color-ink);
+    color: var(--color-page);
+  }
+  .login-side h2 {
+    font-size: 36px;
+    line-height: 48px;
+    letter-spacing: -0.02em;
+    margin: 0 0 16px;
+    max-width: 14ch;
+    font-weight: 600;
+  }
+  .login-side p {
+    max-width: 36ch;
+    margin: 0;
+    opacity: 0.85;
+  }
+  .login-form {
+    display: grid;
+    place-items: center;
+    padding: 24px 16px;
+  }
+  .login-form .card2 {
+    width: 100%;
+    max-width: 400px;
+    padding: 32px;
+    box-shadow: var(--shadow-2);
+  }
+  .pw {
+    position: relative;
+  }
+  .pw .icon-btn {
+    position: absolute;
+    right: 2px;
+    top: 2px;
+  }
+  .pw input {
+    padding-right: 48px;
+  }
+}
+
+/* Variantes de botón fuera de capas: ganan sobre las reglas de daisyUI. */
+.btn-secundario.btn {
+  --btn-bg: var(--color-surface);
+  --btn-fg: var(--color-ink);
+  --btn-border: var(--color-field-line);
+  --btn-shadow: none;
+}
+.btn-secundario.btn:hover {
+  --btn-bg: var(--color-hover);
+}
+.btn-peligro.btn-peligro {
+  --btn-bg: var(--color-surface);
+  --btn-fg: var(--color-err);
+  --btn-border: var(--color-err);
+  --btn-shadow: none;
+}
+.btn-peligro.btn-peligro:hover {
+  --btn-bg: var(--color-err-bg);
+}
+
+/* Sin capa: gana al height de daisyUI. El texto largo crece en alto en vez de salirse del botón. */
+:is(a, button).btn {
+  height: auto;
+  padding-block: 8px;
+}
+
+/* 017: miniatura del comprobante, arrastre de prioridad y fila revisada. */
+.miniatura {
+  max-width: 160px;
+  max-height: 160px;
+  object-fit: contain;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-1);
+}
+.sortable-ghost {
+  background: var(--color-brand-soft);
+}
+.fila-revisada {
+  background: var(--color-thead);
+}
+
+/* ---------- 018: controles de daisyUI con los tokens del tema ----------
+ * Sin capa: gana a las reglas de daisyUI (mismo criterio que los botones de arriba). */
+.input,
+.select,
+.textarea {
+  width: 100%;
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  font-size: 15px;
+  --input-color: var(--color-field-line);
+}
+.input,
+.select {
+  height: var(--alto-control);
+}
+:is(.input, .select, .textarea):is(:focus, :focus-within) {
+  --input-color: var(--color-focus);
+}
+.input-error,
+.select-error,
+.textarea-error,
+:is(.input, .select, .textarea)[aria-invalid="true"] {
+  --input-color: var(--color-err);
+}
+
+/* Tablas densas (FR-024): 4 px arriba y abajo, 8 px a los costados, texto de 12 px. El enlace o
+ * botón de la celda mide 44 px y entra en la fila con un margen negativo. */
+.t-xs th,
+.t-xs td {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+.t-xs td :is(a, button, summary, label) {
+  margin-block: -4px;
+}
+
+/* Escritorio (023/FR-002, FR-006): filas condensadas y controles de 28 px. Bajo 1024 px nada cambia. */
+@media (min-width: 1024px) {
+  .t td {
+    padding: 4px 12px;
+    min-height: 0;
+  }
+  .t td :is(a, .btn, summary) {
+    min-height: 28px;
+  }
+  .t td .icon-btn {
+    width: 28px;
+    height: 28px;
+  }
+  .t-xs td :is(a, button, summary, label) {
+    margin-block: 0;
+  }
+}
+
+/* Ayuda (i) al lado del título y del encabezado, sin mayúsculas en el panel (023/FR-008). */
+th .ayuda {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Ayuda (i) (FR-006) y menús con `details` (FR-021, FR-027). */
+.ayuda-panel {
+  z-index: 30;
+  width: 18rem;
+  max-width: calc(100vw - 32px);
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 400;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: normal;
+  color: var(--color-ink);
+  background: var(--color-surface);
+  border-radius: var(--radius-2);
+}
+@media (max-width: 639.98px) {
+  .ayuda-panel {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    width: auto;
+    max-width: none;
+  }
+}
+
+/* Método de cobro con botones (FR-013). El radio real queda dentro del botón, sin verse. */
+.metodo {
+  position: relative;
+  height: 52px;
+  justify-content: flex-start;
+  --btn-bg: var(--color-surface);
+  --btn-fg: var(--color-ink);
+  --btn-border: var(--color-field-line);
+}
+.metodo input[type="radio"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.metodo:has(:checked) {
+  --btn-bg: var(--color-brand-soft);
+  --btn-border: var(--color-brand-ink);
+  font-weight: 600;
+}
+.metodo:has(:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Combobox con búsqueda (FR-019): Tom Select sin su CSS. */
+.ts-wrapper {
+  position: relative;
+  width: 100%;
+}
+.ts-hidden-accessible {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+}
+.ts-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--alto-control);
+  padding: 0 12px;
+  overflow: hidden;
+  cursor: pointer;
+  font-size: 15px;
+  color: var(--color-ink);
+  background: var(--color-surface);
+  border: 1px solid var(--color-field-line);
+  border-radius: var(--radius-2);
+}
+.ts-control::after {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin: -4px 2px 0 auto;
+  border-right: 2px solid var(--color-ink-2);
+  border-bottom: 2px solid var(--color-ink-2);
+  rotate: 45deg;
+}
+.ts-wrapper.focus .ts-control {
+  border-color: var(--color-focus);
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+.ts-control > .item {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ts-control > input {
+  flex: 1 1 2rem;
+  min-width: 2rem;
+  width: auto;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+  outline: none;
+  font: inherit;
+  cursor: pointer;
+}
+.ts-wrapper.input-hidden .ts-control > input {
+  position: absolute;
+  left: -10000px;
+  opacity: 0;
+}
+.ts-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 30;
+  width: 100%;
+  margin-top: 4px;
+  background: var(--color-surface);
+  border-radius: var(--radius-2);
+}
+.ts-dropdown-content {
+  max-height: 288px;
+  overflow: hidden auto;
+}
+.ts-dropdown .option,
+.ts-dropdown .no-results {
+  display: flex;
+  align-items: center;
+  min-height: var(--alto-control);
+  padding: 0 12px;
+  font-size: 15px;
+}
+.ts-dropdown .option {
+  cursor: pointer;
+}
+.ts-dropdown .option.active {
+  background: var(--color-hover);
+}
+.ts-dropdown .option.selected {
+  font-weight: 600;
+}
+.ts-dropdown .no-results {
+  color: var(--color-ink-3);
+}
+/* Búsqueda dentro de la lista (plugin dropdown_input, 023/FR-004). El campo cerrado no muestra cursor. */
+.dropdown-input-wrap {
+  padding: 8px;
+  border-bottom: 1px solid var(--color-line);
+}
+.dropdown-input-wrap .dropdown-input {
+  border: 1px solid var(--color-field-line);
+  border-radius: var(--radius-2);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  height: var(--alto-control);
+  width: 100%;
+  padding: 0 12px;
+  font-size: 15px;
+}
+.ts-control {
+  caret-color: transparent;
+}
+/* Selector de mes y año (023/FR-021): sin ancho fijo; entra "Septiembre" entero con la flecha. */
+.ts-wrapper.w-auto {
+  width: auto;
+  min-width: 9.5rem;
+}
+
+/* Calendario (FR-027): Cally con las clases `cally` de daisyUI dentro de un panel. */
+.cal-panel {
+  z-index: 30;
+  padding: 0;
+  background: var(--color-surface);
+  border-radius: var(--radius-2);
+}
+.cal-panel .cally {
+  font-size: 14px;
+  color: var(--color-ink);
+}
+.cal-panel .cally::part(container) {
+  padding: 8px;
+}
+.cal-panel .cally::part(button) {
+  min-width: var(--alto-control);
+  min-height: var(--alto-control);
+}
+.cal-panel .cally::part(head) {
+  opacity: 1;
+  font-size: 12px;
+  color: var(--color-ink-3);
+}
+@media (max-width: 639.98px) {
+  .cal-panel {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    width: auto;
+  }
+}
+
+/* Botón (i) (019/FR-001): ícono de 16 px, área táctil de 44 px sin agrandar la fila. */
+.ayuda-i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--alto-control);
+  height: var(--alto-control);
+  margin: -14px -14px -14px -10px;
+  cursor: pointer;
+  list-style: none;
+  background: none;
+  box-shadow: none;
+  color: var(--color-ink-3);
+}
+.ayuda-i::-webkit-details-marker {
+  display: none;
+}
+.ayuda-i:hover,
+[open] > .ayuda-i {
+  color: var(--color-ink);
+}
+
+/* Todo desplegable con borde y sombra (019/FR-004). daisyUI dibuja ::picker(select) con base-200,
+   que es el color de la página. */
+:is(.select, .select select)::picker(select),
+.ayuda-panel,
+.ts-dropdown,
+.cal-panel {
+  border: 1px solid var(--color-line-strong);
+  box-shadow: var(--shadow-2);
+}
+
+/* Filtro "Estado" (019/FR-015): "×" en lugar de "Todos". Gana a daisyUI por el [aria-label]. */
+.filter input.filter-reset[aria-label]::after {
+  content: "×";
+}
+.filter input.filter-reset {
+  display: none;  /* sin estado elegido no ocupa lugar ni deja hueco (023/FR-009) */
+  justify-content: center;
+  padding-inline: 0;
+  margin: 0;
+  border: 0;
+  font-size: 20px;
+  line-height: 1;
+}
+/* Ancho fijo solo con un estado elegido: sin estado, la "×" oculta no deja hueco (021/FR-016). */
+.filter:has(input:checked:not(.filter-reset)) input.filter-reset {
+  display: inline-flex;
+  width: var(--alto-control);
+}
+.filter input.btn:checked:not(.filter-reset) {
+  background-color: var(--color-brand-soft);
+  border-color: var(--color-brand-ink);
+  color: var(--color-brand-ink);
+  font-weight: 600;
+}
+
+/* Filtros: una grilla que llena la tarjeta, "Filtrar" a la derecha (021/FR-017). */
+.filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px 16px;
+  align-items: end;
+  width: 100%;
+}
+.filtros > .btn:last-child,
+.filtros > .filtros-fin {
+  justify-self: end;
+}
+
+/* "Más filtros" (023/FR-011): flex que reparte la última fila. La grilla auto-fit deja huecos a la
+   derecha cuando la última fila trae menos campos que columnas. */
+.filtros-llenan {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: end;
+  width: 100%;
+}
+.filtros-llenan > * {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+/* Ancho propio, sin estirarse: el grupo "Estado" no se aprieta en una columna pareja. */
+.filtros-llenan > .filtro-fijo {
+  flex: none;
+}
+
+/* Formularios: 2 columnas desde xl y campos cortos (021/FR-057). */
+@media (min-width: 1280px) {
+  .form-2col {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 24px;
+  }
+}
+.campo-corto {
+  width: 6rem;
+}
+.select-corto {
+  max-width: 200px;
+}
+
+/* iOS agranda la página si el campo tiene menos de 16 px (021/FR-060). */
+@media (max-width: 639.98px) {
+  input:not([type="file"], [type="checkbox"], [type="radio"]),
+  select,
+  textarea,
+  .input,
+  .select,
+  .textarea {
+    font-size: 16px;
+  }
+}
+
+/* Aviso flotante: nunca más ancho que la ventana (020/FR-031). */
+[data-avisos] {
+  max-width: calc(100vw - 32px);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+[data-avisos] > * {
+  max-width: 100%;
+}
+
+/* Pulido 022 */
+/* Cabecera de acciones sobre la tabla, dentro de la tarjeta (FR-001). */
+.barra-elegidos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid var(--color-line);
+}
+/* Pie de formulario de edición, fuera de la tarjeta (FR-027). */
+.pie-form {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+@media (max-width: 639px) {
+  .pie-form {
+    flex-direction: column-reverse;
+  }
+  .pie-form .btn {
+    width: 100%;
+  }
+}
+/* Celular acostado: la cabecera no tapa media pantalla (FR-040). */
+@media (max-height: 500px) {
+  .topbar {
+    position: static;
+  }
+}
+
+/* 024: Nuevo cobro en una vista. Tabla de prestaciones (FR-002 a FR-007). */
+.tc-th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-ink-2);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.tc-rama {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-2);
+  background: var(--color-surface);
+}
+.tc-fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 8px 12px;
+}
+.tc-cab {
+  background: var(--color-elevated);
+  border-radius: var(--radius-2);
+  min-height: 48px;
+}
+.tc-rama:has([x-show]:not([style*="none"])) .tc-cab {
+  border-radius: var(--radius-2) var(--radius-2) 0 0;
+}
+.tc-pres {
+  border-top: 1px solid var(--color-track);
+}
+.tc-pres:has(input[name^="elegida_"]:checked) {
+  background: var(--color-brand-soft);
+}
+.tc-n {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.tc-chev {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius-1);
+  background: none;
+  color: var(--color-ink-2);
+  cursor: pointer;
+  flex: none;
+}
+.tc-chev:hover {
+  background: var(--color-hover);
+  color: var(--color-ink);
+}
+.tc-prof {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--color-ink-2);
+}
+.tc-punto {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--color-brand-ink);
+}
+.tc-pop {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 4px);
+  z-index: 20;
+  width: 280px;
+  padding: 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-2);
+  box-shadow: var(--shadow-3);
+}
+.tc-ico {
+  display: inline-flex;
+  color: var(--color-warn);
+}
+.tc-ico[hidden] {
+  display: none;
+}
+@media (max-width: 1023px) {
+  .tc-nombre {
+    flex: 1 1 calc(100% - 64px);
+    font-weight: 500;
+  }
+  .tc-prof {
+    font-size: 13px;
+  }
+  .tc-cifra {
+    font-size: 12px;
+    color: var(--color-ink-2);
+    text-align: left;
+  }
+  .tc-precio {
+    padding-left: 56px;
+  }
+  .tc-monto {
+    flex-basis: 100%;
+    padding-left: 56px;
+  }
+}
+@media (min-width: 1024px) {
+  .tc-fila {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) 104px 104px 112px 140px 20px;
+    column-gap: 12px;
+    padding: 0 14px;
+  }
+  .tc-th {
+    height: 40px;
+  }
+  .tc-cab {
+    height: 48px;
+  }
+  .tc-pres {
+    height: 52px;
+  }
+  .tc-pres .tc-nombre {
+    padding-left: 30px;
+    line-height: 1.25;
+  }
+  .tc-prof {
+    font-size: 12px;
+  }
+  .tc-cab .tc-chev {
+    width: 28px;
+    height: 28px;
+  }
+  .tc-prof .tc-chev {
+    width: 20px;
+    height: 20px;
+  }
+  /* FR-005: el error de un monto es un ícono al costado; el texto aparece en hover y en foco. */
+  .tc-monto {
+    position: relative;
+  }
+  .tc-monto .err-msg {
+    position: absolute;
+    left: calc(100% + 12px);
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 15;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    padding: 0;
+    border-radius: 999px;
+    background: var(--color-err);
+    font-size: 0;
+    cursor: help;
+  }
+  .tc-monto .err-msg::before {
+    content: "!";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--color-surface);
+    font-size: 13px;
+    font-weight: 700;
+  }
+  /* Solo el hover sobre el ícono muestra el texto, en ::after: el ícono no se mueve. */
+  .tc-ico {
+    position: relative;
+    cursor: help;
+  }
+  .tc-monto .err-msg:hover::after,
+  .tc-ico[data-texto]:hover::after {
+    content: attr(data-texto);
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 6px);
+    width: max-content;
+    max-width: 320px;
+    padding: 6px 10px;
+    border-radius: var(--radius-2);
+    background: var(--color-ink);
+    color: var(--color-surface);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    white-space: normal;
+    box-shadow: var(--shadow-2);
+  }
+  .tc-pres:has([aria-invalid="true"]) [data-parcial] {
+    display: none;
+  }
+}
+
+/* 024/FR-009: métodos con ícono y caja según el método. */
+.metodo-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 76px;
+  border: 1px solid var(--color-field-line);
+  border-radius: var(--radius-2);
+  background: var(--color-surface);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.metodo-tile input[type="radio"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.metodo-tile:has(:checked) {
+  border: 2px solid var(--color-brand-ink);
+  background: var(--color-brand-soft);
+  color: var(--color-nav-active-text);
+  font-weight: 600;
+}
+.metodo-tile:has(:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.metodo-tile:has(:disabled) {
+  cursor: not-allowed;
+}
+.metodo-tile:has(:disabled:not(:checked)) {
+  opacity: 0.45;
+}
+.caja-metodo {
+  display: flex;
+  min-height: 172px;
+  padding: 16px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-2);
+  background: var(--color-thead);
+}
+
+/* 024/FR-011: barra fija con el total y el botón final. */
+.barra-cobro {
+  position: sticky;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 24px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-line);
+  box-shadow: 0 -4px 16px rgb(22 32 26 / 0.08);
+}
+@media (max-width: 639px) {
+  .barra-cobro .btn {
+    flex: 1 1 100%;
+  }
+}
+
+/* 024/FR-010: comprobante elegido como tarjeta: vista previa arriba, nombre y Quitar abajo. */
+.con-archivo .drop {
+  display: none;
+}
+.con-archivo .file {
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 4px 0 10px;
+  overflow: hidden;
+  font-size: 13px;
+}
+.con-archivo .file > a:first-child {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: 0 0 calc(100% + 14px);
+  height: 150px;
+  margin: 0 -4px 0 -10px;
+  background: var(--color-elevated);
+  cursor: zoom-in;
+}
+.con-archivo .file > a:first-child::after {
+  content: "Ver";
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgb(22 32 26 / 0.75);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+.con-archivo .file .miniatura {
+  max-width: 100%;
+  max-height: 150px;
+  border: 0;
+  border-radius: 0;
+}
+.con-archivo .file .btn {
+  color: var(--color-error);
+}

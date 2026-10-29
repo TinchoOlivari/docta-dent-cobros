@@ -1,0 +1,23 @@
+<c-vars monto="" tipo_comprobante="" ayuda="" info="" ayuda_lado="" sufijo="" />
+{% load ui %}
+<div class="field">
+  {% if info %}
+  <div class="flex items-center gap-1">
+    <label for="{{ campo.id_for_label }}" class="lbl-f mb-0">{{ campo.label }}</label>
+    <c-ayuda :tema="campo.label" :texto="info" :lado="ayuda_lado" />
+  </div>
+  {% else %}
+  <label for="{{ campo.id_for_label }}" class="lbl-f">{{ campo.label }}</label>
+  {% endif %}
+  {% if monto %}<div data-monto class="tabular-nums">{{ campo|campo_accesible }}</div>
+  {% elif tipo_comprobante %}<div data-comprobante>{{ campo|campo_accesible }}</div>
+  {% elif sufijo %}<div class="flex items-center gap-2">{{ campo|campo_accesible }}<span aria-hidden="true">{{ sufijo }}</span></div>
+  {% else %}{{ campo|campo_accesible }}{% endif %}
+  {% if ayuda or campo.help_text %}<p id="{{ campo.auto_id }}-ayuda" class="hint">{{ ayuda|default:campo.help_text }}</p>{% endif %}
+  {% if campo.errors %}
+    <p id="{{ campo.auto_id }}-error" class="err-msg" role="alert">
+      <c-icono nombre="circle-alert" clase="size-4" />
+      <span>{% for error in campo.errors %}{{ error }}{% if not forloop.last %} {% endif %}{% endfor %}</span>
+    </p>
+  {% endif %}
+</div>

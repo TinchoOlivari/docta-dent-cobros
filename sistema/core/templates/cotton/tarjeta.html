@@ -1,0 +1,10 @@
+<c-vars titulo="" nivel="2" />
+<section class="card2" {{ attrs }}>
+  {% if titulo or acciones %}
+    <div class="hd">
+      {% if nivel == "3" %}<h3>{{ titulo }}</h3>{% else %}<h2>{{ titulo }}</h2>{% endif %}
+      {% if acciones %}<div class="acts">{{ acciones }}</div>{% endif %}
+    </div>
+  {% endif %}
+  <div class="bd2">{{ slot }}</div>
+</section>

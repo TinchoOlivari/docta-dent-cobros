@@ -1,0 +1,35 @@
+{% extends "sistema/base.html" %}
+{% block title %}Proveedores{% endblock %}
+{% block migas %}<li><a href="{% url 'destinatarios:lista' %}">Destinatarios</a></li><li aria-current="page">Proveedores</li>{% endblock %}
+{% block titulo %}Proveedores{% endblock %}
+{% block subtitulo %}Proveedores de terminal POS disponibles para las cuentas.{% endblock %}
+{% block acciones %}<c-boton variante="secundario" href="{% url 'destinatarios:lista' %}" icono="arrow-left">Volver</c-boton>{% endblock %}
+{% block content %}
+<div class="grid items-start gap-6 lg:grid-cols-2">
+  <section class="card2">
+    <c-tabla titulo_accesible="Proveedores">
+      <thead><tr><th>Nombre</th><th><span class="sr-only">Acciones</span></th></tr></thead>
+      <tbody>
+        {% for p in proveedores %}
+        <tr>
+          <td class="font-medium">{{ p.nombre }}</td>
+          <td class="text-right"><a class="text-brand-ink underline" href="{% url 'auditoria:historial' 'destinatarios.proveedor' p.pk %}">Historial</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="2"><c-vacio texto="Todavía no hay proveedores." /></td></tr>
+        {% endfor %}
+      </tbody>
+    </c-tabla>
+  </section>
+  <c-tarjeta titulo="Agregar proveedor">
+    <form method="post">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+      <div class="mb-4"><c-alerta nivel="error">{% for e in form.non_field_errors %}{{ e }}{% if not forloop.last %} {% endif %}{% endfor %}</c-alerta></div>
+      {% endif %}
+      <c-campo :campo="form.nombre" />
+      <c-boton variante="primario" icono="plus">Agregar proveedor</c-boton>
+    </form>
+  </c-tarjeta>
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% load pesos ui %}
+<c-tabla titulo_accesible="Recibido y esperado por cuenta">
+  <thead><tr><th scope="col"><span class="sr-only">Cuenta</span></th><th scope="col" class="col-monto">Recibido</th><th scope="col" class="col-monto">Esperado</th><th scope="col" class="col-sec">Avance</th></tr></thead>
+  <tbody>
+    {% for s in reporte.secciones %}
+    <tr class="font-semibold"><td>{{ s.nombre }}</td><td class="col-monto">{{ s.recibido|pesos }}</td><td class="col-monto">{% if s.esperado is None %}—{% else %}{{ s.esperado|pesos }}{% endif %}</td><td class="col-sec"></td></tr>
+    {% for f in s.cuentas %}
+    <tr><td class="pl-6">— {{ f.nombre }}</td><td class="col-monto">{{ f.recibido|pesos }}</td><td class="col-monto">{% if f.esperado is None %}—{% else %}{{ f.esperado|pesos }}{% endif %}</td><td class="col-sec">{% barra f.recibido f.esperado etiqueta="Avance de "|add:f.nombre %}</td></tr>
+    {% endfor %}
+    {% endfor %}
+    {% if reporte.complementario > 0 %}
+    <tr><td>Pago complementario</td><td class="col-monto">{{ reporte.complementario|pesos }}</td><td></td><td class="col-sec"></td></tr>
+    {% endif %}
+    <tr class="font-semibold"><td>Total</td><td class="col-monto">{{ reporte.recibido|pesos }}</td><td class="col-monto">{{ reporte.esperado|pesos }}</td><td class="col-sec">{% barra reporte.recibido reporte.esperado etiqueta="Avance total" %}</td></tr>
+    <tr class="font-semibold"><td>Diferencia</td><td></td><td class="col-monto">{{ reporte.diferencia|pesos }}</td><td class="col-sec"></td></tr>
+  </tbody>
+</c-tabla>

@@ -1,0 +1,37 @@
+{% extends "sistema/base.html" %}
+{% load pesos %}
+{% block title %}Vincular con Dentalink{% endblock %}
+{% block migas %}<li><a href="{% url 'cobros:lista' %}">Cobros</a></li><li><a href="{% url 'cobros:detalle' cobro.pk %}">Cobro {{ cobro.pk }}</a></li><li><span aria-current="page">Vincular con Dentalink</span></li>{% endblock %}
+{% block titulo %}Vincular el cobro {{ cobro.pk }} con Dentalink{% endblock %}
+{% block subtitulo %}Monto del cobro: <span class="tabular-nums">{{ cobro.monto|pesos }}</span>. Los ítems deben sumar ese monto.{% endblock %}
+{% block acciones %}<c-boton href="{% url 'cobros:detalle' cobro.pk %}" variante="secundario" icono="arrow-left">Volver al cobro</c-boton>{% endblock %}
+{% block content %}
+<div class="max-w-3xl">
+{% if caido %}
+<c-alerta nivel="warning" titulo="Dentalink no está disponible.">Volvé a intentar más tarde.</c-alerta>
+{% else %}
+<form method="post" class="space-y-4">
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+  <c-alerta nivel="error" titulo="No se pudieron guardar los ítems.">{% for e in form.non_field_errors %}{{ e }} {% endfor %}</c-alerta>
+  {% endif %}
+  <section class="card2" aria-labelledby="h-items">
+    <div class="hd"><h2 id="h-items">Prestaciones</h2></div>
+    <div class="bd2 space-y-3">
+      {% if form.filas %}
+      <div>
+        <label for="filtro-filas" class="lbl-f">Filtrar por tratamiento, prestación o profesional</label>
+        <input id="filtro-filas" type="search" data-filtrar="#filas-items" data-sin-foco placeholder="Escribí para filtrar">
+      </div>
+      {% endif %}
+      {% include "cobros/_arbol.html" with id="filas-items" %}
+    </div>
+  </section>
+  <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+    <c-boton href="{% url 'cobros:detalle' cobro.pk %}" variante="secundario">Cancelar</c-boton>
+    <c-boton variante="primario" icono="check">Guardar ítems</c-boton>
+  </div>
+</form>
+{% endif %}
+</div>
+{% endblock %}

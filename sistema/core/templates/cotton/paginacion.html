@@ -1,0 +1,26 @@
+<c-vars query="" hx_target="" nombre="resultados" />
+{% load ui %}
+{% if pagina and pagina.paginator.num_pages > 1 %}
+{% with q=query %}
+<nav aria-label="Paginación" class="pager">
+  <span class="tabular-nums">{{ pagina.paginator.count|floatformat:"0g" }} {{ nombre }} · Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+  <div class="flex flex-wrap items-center gap-2">
+  {% if pagina.has_previous %}
+    <a class="btn btn-secundario min-h-11 min-w-11" href="?{% if q %}{{ q }}&amp;{% endif %}page=1"{% if hx_target %} hx-get="?{% if q %}{{ q }}&amp;{% endif %}page=1" hx-target="{{ hx_target }}" hx-push-url="true"{% endif %}>Primera</a>
+    <a class="btn btn-secundario min-h-11 min-w-11" href="?{% if q %}{{ q }}&amp;{% endif %}page={{ pagina.previous_page_number }}"{% if hx_target %} hx-get="?{% if q %}{{ q }}&amp;{% endif %}page={{ pagina.previous_page_number }}" hx-target="{{ hx_target }}" hx-push-url="true"{% endif %}>
+      <c-icono nombre="chevron-left" clase="size-5" /><span>Anterior</span></a>
+  {% endif %}
+  {% for n in pagina|paginas %}
+    {% if n is None %}<span aria-hidden="true" class="px-1">…</span>
+    {% elif n == pagina.number %}<span class="btn btn-primary min-h-11 min-w-11 tabular-nums" aria-current="page">{{ n }}</span>
+    {% else %}<a class="btn btn-secundario min-h-11 min-w-11 tabular-nums" href="?{% if q %}{{ q }}&amp;{% endif %}page={{ n }}"{% if hx_target %} hx-get="?{% if q %}{{ q }}&amp;{% endif %}page={{ n }}" hx-target="{{ hx_target }}" hx-push-url="true"{% endif %}>{{ n }}</a>{% endif %}
+  {% endfor %}
+  {% if pagina.has_next %}
+    <a class="btn btn-secundario min-h-11 min-w-11" href="?{% if q %}{{ q }}&amp;{% endif %}page={{ pagina.next_page_number }}"{% if hx_target %} hx-get="?{% if q %}{{ q }}&amp;{% endif %}page={{ pagina.next_page_number }}" hx-target="{{ hx_target }}" hx-push-url="true"{% endif %}>
+      <span>Siguiente</span><c-icono nombre="chevron-right" clase="size-5" /></a>
+    <a class="btn btn-secundario min-h-11 min-w-11" href="?{% if q %}{{ q }}&amp;{% endif %}page={{ pagina.paginator.num_pages }}"{% if hx_target %} hx-get="?{% if q %}{{ q }}&amp;{% endif %}page={{ pagina.paginator.num_pages }}" hx-target="{{ hx_target }}" hx-push-url="true"{% endif %}>Última</a>
+  {% endif %}
+  </div>
+</nav>
+{% endwith %}
+{% endif %}

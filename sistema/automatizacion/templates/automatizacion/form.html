@@ -1,0 +1,29 @@
+{% extends "sistema/base.html" %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block migas %}<li><a href="{% url 'automatizacion:lista' %}">Reglas de automatización</a></li><li aria-current="page">{{ titulo }}</li>{% endblock %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block content %}
+<div class="max-w-2xl"><c-tarjeta>
+  <form method="post"{% if regla %} data-sin-foco{% endif %}>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+    <div class="mb-6"><c-alerta nivel="error">{% for e in form.non_field_errors %}{{ e }}{% if not forloop.last %} {% endif %}{% endfor %}</c-alerta></div>
+    {% endif %}
+    {% if resumen %}<div class="mb-6"><c-alerta nivel="info">{{ resumen }}</c-alerta></div>{% endif %}
+    <c-campo :campo="form.nombre" />
+    <c-campo :campo="form.cuenta" />
+    {% if form.estado %}<c-campo :campo="form.estado" />{% endif %}
+    <div x-data="segunMetodo('[name=disparador]')">
+      <c-campo :campo="form.disparador" />
+      <div x-show="metodo === 'semana'"><c-campo :campo="form.dia_semana" /></div>
+      <div x-show="metodo === 'mes'"><c-campo :campo="form.dia_mes" /></div>
+    </div>
+    <c-campo :campo="form.hora" />
+    <div x-data="segunMetodo('[name=accion]')">
+      <c-campo :campo="form.accion" />
+      <div x-show="metodo === 'posicion'"><c-campo :campo="form.posicion" /></div>
+    </div>
+    <c-pie-form cancelar="{% url 'automatizacion:lista' %}" />
+  </form>
+</c-tarjeta></div>
+{% endblock %}

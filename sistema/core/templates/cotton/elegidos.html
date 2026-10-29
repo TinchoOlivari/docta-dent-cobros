@@ -1,0 +1,6 @@
+<c-vars id="elegidos" action="" />
+<form id="{{ id }}" method="post" action="{{ action }}" data-sin-foco x-show="n > 0" style="display:none" class="barra-elegidos" {{ attrs }}>
+  {% csrf_token %}
+  <strong class="tabular-nums" x-text="n + (n === 1 ? ' elegido' : ' elegidos')">Elegidos</strong>
+  {{ slot }}
+</form>
